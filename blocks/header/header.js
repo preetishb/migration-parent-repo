@@ -565,13 +565,6 @@ function handleSignOut(langCode) {
     window.updateDataLayer({ page: {}, product: {}, mortgage: {}, partnerData: {}, project: { id: 'securfinancial2' }, wizard: {} }, true);
   }
 
-  // Dispatch sign-out event
-  const signOutEvent = new CustomEvent("user-signed-out", {
-    detail: { timestamp: new Date().toISOString() },
-    bubbles: true,
-  });
-  document.dispatchEvent(signOutEvent);
-
   // Redirect to home page
   const homeUrl = langCode === "en" ? "/" : `/${langCode}`;
   window.location.href = homeUrl;
@@ -752,6 +745,7 @@ export default async function decorate(block) {
         }
       });
       langWrap.append(langBtn, langMenu);
+      const targetContainer = contentWrapper || navTools;
       targetContainer.append(langWrap);
     } catch (e) {
       // eslint-disable-next-line no-console

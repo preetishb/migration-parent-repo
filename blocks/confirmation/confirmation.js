@@ -23,7 +23,7 @@ function resetCartFromDataLayer() {
       subTotal: 0,
       total: 0,
     },
-  }, true);
+  }, false);
 }
 
 function renderConfirmation(block, data) {
@@ -85,6 +85,7 @@ function renderConfirmation(block, data) {
 export default async function decorate(block) {
   const data = getBookingData();
   renderConfirmation(block, data);
+  localStorage.removeItem('wknd-fly-selected-flights');
   sessionStorage.removeItem('wknd-fly-selected-flights');
   sessionStorage.removeItem('wknd-fly-booking-confirmation');
   resetCartFromDataLayer();

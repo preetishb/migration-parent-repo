@@ -13,13 +13,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-    overflow: hidden;
+  overflow: hidden;
 }
 
 body.securbank-theme .hero {
   min-height: 400px;
 }
-
 
 /* --------------------------
    Headings & Paragraphs

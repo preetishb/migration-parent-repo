@@ -7,7 +7,7 @@ const AUTHOR_GRAPHQL_BASE_For_Search = 'https://author-p189874-e1977911.adobeaem
 const PUBLISH_GRAPHQL_BASE_For_Search = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-details-list';
 
 const AUTHOR_GRAPHQL_BASE_For_Destination = 'https://author-p189874-e1977911.adobeaemcloud.com/graphql/execute.json/wknd-fly/flight-details-list-for-destination-page';
-const PUBLISH_GRAPHQL_BASE_For_Destination = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-details-list-for-destination-page';
+const PUBLISH_GRAPHQL_BASE_For_Destination = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-details-list';
 let selectButtonDataAttributes = {};
 
 // Sample airport data (shared with flight-search)
@@ -28,7 +28,7 @@ const AIRPORTS = [
   { code: 'TQO', city: 'Tulum', country: 'Mexico' },
 ];
 
-// Trip / checkout: persist selected flights across pages (sessionStorage)
+// Trip / checkout: persist selected flights across pages/tabs (localStorage)
 const TRIP_STORAGE_KEY = 'wknd-fly-selected-flights';
 
 // Normalize string for matching URL slug to country (e.g. "United States" -> "unitedstates")
@@ -229,8 +229,14 @@ export function getCheckoutPath() {
 
 export function getSelectedFlights() {
   try {
-    const raw = sessionStorage.getItem(TRIP_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const localRaw = localStorage.getItem(TRIP_STORAGE_KEY);
+    if (localRaw) return JSON.parse(localRaw);
+    // Backward compatibility: migrate older sessionStorage data once.
+    const sessionRaw = sessionStorage.getItem(TRIP_STORAGE_KEY);
+    if (!sessionRaw) return [];
+    const parsed = JSON.parse(sessionRaw);
+    localStorage.setItem(TRIP_STORAGE_KEY, JSON.stringify(parsed));
+    return parsed;
   } catch {
     return [];
   }
@@ -240,13 +246,13 @@ export function addFlightToTrip(flight) {
   const list = getSelectedFlights();
   const id = flight.id || `trip-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   list.push({ ...flight, id });
-  sessionStorage.setItem(TRIP_STORAGE_KEY, JSON.stringify(list));
+  localStorage.setItem(TRIP_STORAGE_KEY, JSON.stringify(list));
   return id;
 }
 
 export function removeFlightFromTrip(id) {
   const list = getSelectedFlights().filter((f) => f.id !== id);
-  sessionStorage.setItem(TRIP_STORAGE_KEY, JSON.stringify(list));
+  localStorage.setItem(TRIP_STORAGE_KEY, JSON.stringify(list));
 }
 
 function updateBookNowBar(barEl) {
@@ -319,8 +325,10 @@ function displayFlightResults(flights, from, to, date) {
     console.error('Flights block not found!');
     return;
   }
+
+  const safeFlights = Array.isArray(flights) ? flights : [];
   
-  console.log('Displaying flights:', flights.length, flights);
+  console.log('Displaying flights:', safeFlights.length, safeFlights);
   
   // Clear existing content but preserve hidden config divs
   const hiddenDivs = Array.from(block.children).filter(child => child.style.display === 'none');
@@ -331,7 +339,7 @@ function displayFlightResults(flights, from, to, date) {
     block.appendChild(div);
   });
   
-  if (flights.length === 0) {
+  if (safeFlights.length === 0) {
     const noResults = createElement('div', 'flight-no-results');
     const msg = from
       ? `No flights found for ${from} to ${to}${date ? ` on ${formatDate(date)}` : ''}`
@@ -345,7 +353,7 @@ function displayFlightResults(flights, from, to, date) {
     return;
   }
 
-  const title = createElement('h2', 'flight-results-title');
+  const title = createElement('h1', 'flight-results-title');
   if (from) {
     const fromAirport = AIRPORTS.find((a) => a.code === from);
     const toAirport = AIRPORTS.find((a) => a.code === to);
@@ -362,7 +370,7 @@ function displayFlightResults(flights, from, to, date) {
   
   const resultsList = createElement('div', 'flight-results-list');
   const dateForDataLayer = date != null ? (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}/.test(date) ? date.slice(0, 10) : (() => { try { const d = new Date(date); return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10); } catch (e) { return ''; } })()) : '';
-  flights.forEach((flight) => {
+  safeFlights.forEach((flight) => {
     const flightWithDate = { ...flight, date: dateForDataLayer, flightLength: flight.flightLength || '' };
     const flightCard = createElement('div', 'flight-card');
 
@@ -444,7 +452,7 @@ function buildCartFromSelectedFlights(flights) {
     };
     subTotal += price;
   });
-  const productCount = flights.length;
+  const productCount = (flights || []).length;
   return {
     products,
     productCount,
@@ -596,9 +604,6 @@ export default async function decorate(block) {
       flights = await fetchFlightsFromGraphQL(resolved.from, resolved.to);
     } catch (_) {
       // keep flights = []
-    }
-    if (flights.length === 0) {
-      flights = SAMPLE_FLIGHTS[route] || [];
     }
     displayFlightResults(flights, resolved.from, resolved.to, urlDate);
     addBookNowBar(block);
