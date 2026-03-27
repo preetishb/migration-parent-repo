@@ -525,8 +525,10 @@ function decorateSections(main) {
       sectionMeta.parentNode.remove();
 
       // Section text color from UE field (same pattern as hero; key may be sec-color or section-text-color from label)
+      applySectionBackgroundImage(section, meta['sec-bg-image'] ?? meta.image);
       applySectionTextColor(section, meta['sec-color'] ?? meta['section-text-color']);
       applySectionCustomClass(section, meta['sec-custom-styles'] ?? meta['custom-class']);
+      applySectionTextAlignment(section, meta['sec-alignment'] ?? meta['text-alignment']);
     }
     applySectionItemWidths(section);
   });
@@ -719,6 +721,76 @@ function applySectionItemWidths(section) {
   }
 }
 
+/**
+ * Applies custom class(es) to section from UE field (same as hero Custom Styles). Space-separated for multiple.
+ * @param {Element} section The section element
+ * @param {string} value Class name(s), space-separated
+ */
+function applySectionCustomClass(section, value) {
+  const prev = (section.dataset.secCustomStyles ?? '').trim();
+  if (prev) {
+    prev.split(/\s+/).filter(Boolean).forEach((c) => section.classList.remove(c));
+  }
+  delete section.dataset.secCustomStyles;
+  const next = (value ?? '').toString().trim();
+  if (next) {
+    section.dataset.secCustomStyles = next;
+    next.split(/\s+/).filter(Boolean).forEach((c) => section.classList.add(c));
+  }
+}
+
+function applySectionTextColor(section, colorValue) {
+  const isHexColor = (s) => {
+    const t = String(s).trim();
+    if (!t) return false;
+    if (t.startsWith('#')) return /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$/.test(t);
+    return /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(t);
+  };
+  const toHex = (s) => {
+    const t = String(s).trim();
+    if (t.startsWith('#')) return t;
+    return /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/.test(t) ? `#${t}` : t;
+  };
+  const raw = (colorValue ?? section.dataset.secColor ?? section.dataset.sectionTextColor ?? '').toString().trim();
+  section.classList.remove('section--custom-text-color');
+  section.style.removeProperty('--section-text-color');
+  if (raw && isHexColor(raw)) {
+    section.style.setProperty('--section-text-color', toHex(raw));
+    section.classList.add('section--custom-text-color');
+    section.dataset.secColor = raw;
+  } else {
+    delete section.dataset.secColor;
+  }
+}
+
+function applySectionTextAlignment(section, alignmentValue) {
+  const value = (alignmentValue ?? section.dataset.secAlignment ?? '').toString().trim().toLowerCase();
+  if (['left', 'center', 'right'].includes(value)) {
+    section.dataset.secAlignment = value;
+  } else {
+    delete section.dataset.secAlignment;
+    section.removeAttribute('data-sec-alignment');
+  }
+}
+
+function applySectionBackgroundImage(section, bgImagePath) {
+  const existing = section.querySelector('picture.section-bg');
+  if (existing) existing.remove();
+  section.classList.remove('section-has-bg');
+  const path = (bgImagePath ?? section.dataset.secBgImage ?? '').toString().trim();
+  if (path) {
+    section.dataset.secBgImage = path;
+    const picture = createOptimizedPicture(path, '', false, [{ width: '2000' }]);
+    picture.classList.add('section-bg');
+    const img = picture.querySelector('img');
+    if (img) img.classList.add('sec-img');
+    section.classList.add('section-has-bg');
+    section.prepend(picture);
+  } else {
+    delete section.dataset.secBgImage;
+  }
+}
+
 function setupSectionItemWidthsUE() {
   const handler = (event) => {
     const resource = event.detail?.request?.target?.resource;
@@ -731,11 +803,13 @@ function setupSectionItemWidthsUE() {
         section.dataset.secItemWidths = String(val);
         applySectionItemWidths(section);
       }
+      const bgVal = content['sec-bg-image'] ?? content.secBgImage ?? content.image ?? '';
+      applySectionBackgroundImage(section, bgVal);
       const colorVal = content['sec-color'] ?? content.secColor ?? content['section-text-color'] ?? content.sectionTextColor ?? '';
       applySectionTextColor(section, colorVal);
       const customClassVal = content['sec-custom-styles'] ?? content.secCustomStyles ?? content['custom-class'] ?? content.customClass ?? '';
       applySectionCustomClass(section, customClassVal);
-      const alignmentVal = content['sec-alignment'] ?? content.secAlignment ?? '';
+      const alignmentVal = content['sec-alignment'] ?? content.secAlignment ?? content['text-alignment'] ?? content.textAlignment ?? '';
       applySectionTextAlignment(section, alignmentVal);
     }
     if (event.type === 'aue:content-patch') {
@@ -743,6 +817,9 @@ function setupSectionItemWidthsUE() {
       if (patch?.name === 'sec-item-widths') {
         section.dataset.secItemWidths = String(patch.value || '');
         applySectionItemWidths(section);
+      }
+      if (patch?.name === 'sec-bg-image' || patch?.name === 'image') {
+        applySectionBackgroundImage(section, patch.value ?? '');
       }
       if (patch?.name === 'sec-color') {
         applySectionTextColor(section, patch.value ?? '');

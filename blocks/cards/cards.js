@@ -63,7 +63,6 @@ export default function decorate(block) {
     const lastConfigValue = publishConfigCells[publishConfigCells.length - 1] || '';
     const prevConfigValue = publishConfigCells[publishConfigCells.length - 2] || '';
     const lastConfigIsBoolean = /^(true|false)$/i.test(lastConfigValue);
-
     /** True if string looks like a hex color (#xxx, #xxxxxx, or 3/6 hex chars). */
     const isHexColor = (s) => {
       const t = String(s).trim();
@@ -79,6 +78,10 @@ export default function decorate(block) {
 
     // Background color: from data-aue-prop, or from any cell/link that contains only a hex value (UE may store it in link or button field)
     let bgColorRaw = getConfigValue('backgroundcolor', -1);
+    if (!bgColorRaw) {
+      bgColorRaw = (row.querySelector('p[data-aue-prop="backgroundcolor"]')
+        || row.querySelector('[data-aue-prop="backgroundcolor"]'))?.textContent?.trim() || '';
+    }
     if (!bgColorRaw) {
       const hexLink = row.querySelector('a[href^="#"]');
       if (hexLink && isHexColor(hexLink.getAttribute('href') || '')) bgColorRaw = (hexLink.getAttribute('href') || '').replace(/^#/, '');

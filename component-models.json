@@ -176,6 +176,26 @@
     ]
   },
   {
+    "id": "text",
+    "fields": [
+      {
+        "component": "richtext",
+        "name": "text",
+        "value": "",
+        "label": "Text",
+        "valueType": "string"
+      },
+      {
+        "component": "text",
+        "name": "color",
+        "value": "",
+        "label": "Text color",
+        "valueType": "string",
+        "description": "Hex color for text (e.g. #000000 or 333). Leave empty for default."
+      }
+    ]
+  },
+  {
     "id": "button",
     "fields": [
       {
@@ -534,6 +554,14 @@
         "multi": false
       },
       {
+        "component": "reference",
+        "valueType": "string",
+        "name": "sec-bg-image",
+        "label": "Section background image",
+        "description": "Image used as the section background.",
+        "multi": false
+      },
+      {
         "component": "boolean",
         "valueType": "boolean",
         "name": "sec-full-width",
@@ -546,6 +574,35 @@
             "bg-image"
           ]
         }
+      },
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "sec-custom-styles",
+        "value": "",
+        "label": "Custom class",
+        "description": "Additional CSS class name(s) for this section (space-separated for multiple). Same as hero Custom Styles."
+      },
+      {
+        "component": "select",
+        "name": "sec-alignment",
+        "value": "",
+        "label": "Text Alignment",
+        "valueType": "string",
+        "options": [
+          {
+            "name": "Left",
+            "value": "left"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Right",
+            "value": "right"
+          }
+        ]
       },
       {
         "component": "text",
@@ -8296,51 +8353,14 @@
     "id": "flight-search",
     "fields": [
       {
-        "component": "tab",
-        "label": "Basic",
-        "name": "tab-basic"
-      },
-      {
-        "component": "text",
+        "component": "aem-content-fragment",
+        "name": "flightdropdowncontentfragment",
+        "label": "Flight Dropdown Content Fragment",
+        "description": "Select the CF containing the flight dropdown content",
         "valueType": "string",
-        "name": "title",
-        "label": "Title",
-        "description": "Optional title for the flight search block"
-      },
-      {
-        "component": "text",
-        "valueType": "string",
-        "name": "subtitle",
-        "label": "Subtitle",
-        "description": "Optional subtitle for the flight search block"
-      },
-      {
-        "component": "text",
-        "valueType": "string",
-        "name": "apiUrl",
-        "label": "API URL",
-        "description": "Optional API URL for fetching flight data. If not provided, sample data will be used."
-      },
-      {
-        "component": "checkbox",
-        "valueType": "boolean",
-        "name": "enableBusinessTrip",
-        "label": "Enable Business Trip Option",
-        "value": true
-      },
-      {
-        "component": "checkbox",
-        "valueType": "boolean",
-        "name": "enableBusinessClass",
-        "label": "Enable Business Class Option",
-        "value": true
-      },
-      {
-        "component": "checkbox",
-        "valueType": "boolean",
-        "name": "enableTravellingChildren",
-        "label": "Enable Travelling with Children Option",
-        "value": true
+        "validation": {
+          "rootPath": "/content/dam"
+        }
       },
       {
         "component": "text",
@@ -8384,6 +8404,26 @@
   {
     "id": "flights",
     "fields": [
+      {
+        "component": "aem-content-fragment",
+        "name": "flightdropdowncontentfragment",
+        "label": "Flight Dropdown Content Fragment",
+        "description": "Select the CF containing the flight dropdown content fragment",
+        "valueType": "string",
+        "validation": {
+          "rootPath": "/content/dam"
+        }
+      },
+      {
+        "component": "aem-content-fragment",
+        "name": "flightlistcontentfragment",
+        "label": "Flight List Content Fragment",
+        "description": "Select the CF containing the flight list content",
+        "valueType": "string",
+        "validation": {
+          "rootPath": "/content/dam"
+        }
+      },
       {
         "component": "text",
         "name": "buttoneventtype",

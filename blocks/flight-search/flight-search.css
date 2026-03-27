@@ -3,6 +3,8 @@
   margin: 0 auto;
   padding: 2rem 1rem;
   font-family: var(--body-font-family, system-ui, sans-serif);
+  padding-top:0;
+  padding-bottom: 0;
 }
 
 /* Search Form */
@@ -10,7 +12,6 @@
   background: var(--background-color-secondary, #01153a);
   border-radius: 12px;
   padding: 2rem;
-  margin-bottom: 2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 

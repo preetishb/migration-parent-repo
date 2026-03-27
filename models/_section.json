@@ -160,7 +160,7 @@
           "name": "sec-color",
           "value": "",
           "label": "Section text color",
-          "description": "Hex color for section text (e.g. #fff or #000000). Leave empty for default."
+          "description": "Hex color for section text (e.g. #fff, #000000, or 333). Leave empty for default."
         },
         {
           "component": "text",

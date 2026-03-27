@@ -77,6 +77,10 @@ function getPageNameFromPathname(pathname) {
   return isLocaleOnly ? 'home' : lastSegment;
 }
 
+function syncWindowDataLayer() {
+  window.dataLayer = _dataLayer;
+}
+
 function dispatchDataLayerEvent(eventType = 'initialized') {
   document.dispatchEvent(
     new CustomEvent('dataLayerUpdated', {

@@ -1,11 +1,14 @@
 // Flights Block - Displays flight search results (GraphQL CF + fallback to sample data)
 import { isAuthorEnvironment } from '../../scripts/scripts.js';
+import { readBlockConfig } from '../../scripts/aem.js';
+import { dispatchCustomEvent } from '../../scripts/custom-events.js';
 
 const AUTHOR_GRAPHQL_BASE_For_Search = 'https://author-p189874-e1977911.adobeaemcloud.com/graphql/execute.json/wknd-fly/flight-details-list';
 const PUBLISH_GRAPHQL_BASE_For_Search = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-details-list';
 
 const AUTHOR_GRAPHQL_BASE_For_Destination = 'https://author-p189874-e1977911.adobeaemcloud.com/graphql/execute.json/wknd-fly/flight-details-list-for-destination-page';
 const PUBLISH_GRAPHQL_BASE_For_Destination = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-details-list-for-destination-page';
+let selectButtonDataAttributes = {};
 
 // Sample airport data (shared with flight-search)
 const AIRPORTS = [
@@ -62,6 +65,14 @@ function getDestinationCodesFromPath() {
 function getDestinationCodeFromPath() {
   const codes = getDestinationCodesFromPath();
   return codes && codes.length ? codes[0] : null;
+}
+
+// Best human-readable destination label from page content (prefer H1, then document.title)
+function getDestinationLabelFromPageTitle() {
+  if (typeof document === 'undefined') return '';
+  const h1Text = document.querySelector('h1')?.textContent?.trim() || '';
+  if (h1Text) return h1Text;
+  return (document.title || '').trim();
 }
 
 // Resolve from/to only when not on a destination page (destination page has no from/to)
@@ -495,79 +506,53 @@ function handleFlightSelect(flight) {
   addFlightToTrip(fullFlight);
   // Set minimal dataLayer so Launch builds working flight.selection XDM (only from, to, cart; no extra reservation/reservationSearch fields)
   updateDataLayerMinimalForFlightSelection(fullFlight);
-  document.dispatchEvent(new CustomEvent('flight.selected', { bubbles: true }));
-  // Restore full dataLayer for checkout/confirmation before redirect
-  updateDataLayerWithSelectedFlights(fullFlight);
-  setTimeout(() => { window.location.href = getCheckoutPath(); }, 2000);
-}
-
-// Check if a flight item is completely empty (no data at all)
-function isFlightItemEmpty(row) {
-  // First check: if row has data-aue-model="flight", it's a flight item
-  // If it doesn't have this attribute, it might not be a flight item yet
-  const hasModel = row.getAttribute('data-aue-model') === 'flight';
-  
-  // Check if any field has a value - be more lenient in detection
-  const fieldOrder = ['image', 'from', 'fromName', 'to', 'toName', 'departureTime', 'arrivalTime', 'price', 'class'];
-  
-  for (const fieldName of fieldOrder) {
-    const fieldDiv = row.querySelector(`[data-aue-prop="${fieldName}"]`);
-    if (fieldDiv) {
-      // Check all possible ways a value could be stored
-      const p = fieldDiv.querySelector('p');
-      const link = fieldDiv.querySelector('a');
-      const img = fieldDiv.querySelector('img');
-      const picture = fieldDiv.querySelector('picture');
-      const nestedDiv = fieldDiv.querySelector('div:not([data-aue-prop])');
-      
-      // More comprehensive value detection
-      const hasValue = (p && p.textContent && p.textContent.trim() !== '') || 
-                       (link && ((link.href && link.href.trim() !== '') || (link.textContent && link.textContent.trim() !== ''))) ||
-                       (img && ((img.src && img.src.trim() !== '') || (img.getAttribute('data-src') && img.getAttribute('data-src').trim() !== ''))) ||
-                       (picture && picture.querySelector('img')) ||
-                       (nestedDiv && nestedDiv.textContent && nestedDiv.textContent.trim() !== '') ||
-                       (fieldDiv.textContent && fieldDiv.textContent.trim() !== '' && !fieldDiv.querySelector('p') && !fieldDiv.querySelector('a') && !fieldDiv.querySelector('img'));
-      
-      if (hasValue) {
-        return false; // Found at least one field with a value
-      }
-    }
+  if(selectButtonDataAttributes.buttonEventType) {
+    dispatchCustomEvent(selectButtonDataAttributes.buttonEventType);
+    updateDataLayerWithSelectedFlights(fullFlight);
+    setTimeout(() => { window.location.href = getCheckoutPath(); }, 2000);
+  } else {
+    dispatchCustomEvent('flight.selected');
+    updateDataLayerWithSelectedFlights(fullFlight);
+    setTimeout(() => { window.location.href = getCheckoutPath(); }, 2000);
   }
-  
-  // Also check by index if no data attributes found
-  const children = Array.from(row.children);
-  for (let i = 0; i < Math.min(9, children.length); i++) {
-    const child = children[i];
-    // Skip if it's a display element (not a field div)
-    if (child.classList.contains('flight-card-image') || 
-        child.classList.contains('flight-card-details') || 
-        child.classList.contains('flight-card-price')) {
-      continue;
-    }
-    
-    const p = child.querySelector('p');
-    const link = child.querySelector('a');
-    const img = child.querySelector('img');
-    const picture = child.querySelector('picture');
-    
-    const hasValue = (p && p.textContent && p.textContent.trim() !== '') || 
-                     (link && ((link.href && link.href.trim() !== '') || (link.textContent && link.textContent.trim() !== ''))) ||
-                     (img && ((img.src && img.src.trim() !== '') || (img.getAttribute('data-src') && img.getAttribute('data-src').trim() !== ''))) ||
-                     (picture && picture.querySelector('img')) ||
-                     (child.textContent && child.textContent.trim() !== '' && !p && !link && !img);
-    
-    if (hasValue) {
-      return false; // Found at least one field with a value
-    }
-  }
-  
-  // If it has the model attribute but no values, it's a new empty item
-  // If it doesn't have the model attribute, it might not be a flight item
-  return hasModel; // Only consider empty if it's marked as a flight item
 }
 
 // Main decorate function
 export default async function decorate(block) {
+  const config = readBlockConfig(block) || {};
+
+  let flightDropdownContentFragmentPath = null;
+  if(config.flightdropdowncontentfragment || config['flightdropdowncontentfragment']) {
+    flightDropdownContentFragmentPath = config.flightdropdowncontentfragment ?? config['flightdropdowncontentfragment'];
+    if(isAuthorEnvironment()) {
+      flightDropdownContentFragmentPath = flightDropdownContentFragmentPath.replace(window.location.origin, '');
+      flightDropdownContentFragmentPath = flightDropdownContentFragmentPath.replace('.html', '');
+    } else {
+      flightDropdownContentFragmentPath = flightDropdownContentFragmentPath.replace(window.location.origin, '');
+    }
+  }
+
+  let flightListContentFragmentPath = null;
+  if(config.flightlistcontentfragment || config['flightlistcontentfragment']) {
+    flightListContentFragmentPath = config.flightlistcontentfragment ?? config['flightlistcontentfragment'];
+    if(isAuthorEnvironment()) {
+      flightListContentFragmentPath = flightListContentFragmentPath.replace(window.location.origin, '');
+      flightListContentFragmentPath = flightListContentFragmentPath.replace('.html', '');
+    } else {
+      flightListContentFragmentPath = flightListContentFragmentPath.replace(window.location.origin, '');
+    }
+  }
+
+  // Apply button config as data attributes for analytics/webhooks
+  if (config.buttoneventtype && String(config.buttoneventtype).trim()) 
+    selectButtonDataAttributes.buttonEventType = String(config.buttoneventtype).trim();
+  if (config.buttonwebhookurl && String(config.buttonwebhookurl).trim()) 
+    selectButtonDataAttributes.buttonWebhookUrl = String(config.buttonwebhookurl).trim();
+  if (config.buttonformid && String(config.buttonformid).trim()) 
+    selectButtonDataAttributes.buttonFormId = String(config.buttonformid).trim();
+  if (config.buttondata && String(config.buttondata).trim()) 
+    selectButtonDataAttributes.buttonData = String(config.buttondata).trim();
+
   const urlParams = new URLSearchParams(window.location.search);
   const urlDate = urlParams.get('date');
   const resolved = resolveFromAndTo();
@@ -592,7 +577,9 @@ export default async function decorate(block) {
         return true;
       });
     }
-    displayFlightResults(flights, '', destinationLabel || 'destination', urlDate);
+    const noResultsToLabel = getDestinationLabelFromPageTitle() || destinationLabel || 'destination';
+    const toLabel = flights.length === 0 ? noResultsToLabel : (destinationLabel || 'destination');
+    displayFlightResults(flights, '', toLabel, urlDate);
     addBookNowBar(block);
     const selectedFromUrl = getSelectedFlights();
     if (selectedFromUrl.length > 0) {
@@ -625,4 +612,3 @@ export default async function decorate(block) {
   // No from/to resolved and not destination page — nothing to show
   return;
 }
-

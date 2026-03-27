@@ -522,6 +522,12 @@ picture {
   padding: 20px;
   background: rgb(0 0 0 / 50%);
 }
+.hero.image-background-text-left div:nth-child(2){
+   margin-left: 15%; 
+}
+.hero.image-background-text-right div:nth-child(2){
+  margin-right: 15%;
+}
 
 .hero.block.overlay.hero--text-overlay-off div:nth-child(2),
 .hero.image-background-text-left.hero--text-overlay-off div:nth-child(2),

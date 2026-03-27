@@ -664,7 +664,8 @@ export default async function decorate(block) {
     // Find the <li> that contains the Sign In link so we can replace it with the user profile
     const signInLi = nav.querySelector('.nav-sections a[href*="sign-in"]')?.closest('li');
     // Add User Profile in place of Sign In when logged in
-    const isLoggedIn = localStorage.getItem("secur_financial_user_logged_in") === "true";
+    const isLoggedIn = localStorage.getItem("secur_financial_user_logged_in") === "true"
+      || localStorage.getItem("wkndfly_user_logged_in") === "true";
     if (isLoggedIn) {
       if (signInLi) signInLi.classList.add('nav-auth-hidden');
       createUserProfile(targetContainer, langCode, true);
