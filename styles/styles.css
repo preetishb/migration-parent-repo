@@ -351,9 +351,23 @@ body.green-theme {
 
 /* Fly theme (copy of wehealthcare – buttons, header, etc.) */
 .fly-theme {
-  --main-accent-color: #00c4ff;
+  --main-accent-color: #1979c3;
   --nav-text-color: #000000;
   --light-color: #f6f6f6;
+}
+
+body.fly-theme header .nav-wrapper,
+body.fly-theme footer {
+  background-color: #fff;
+  color: var(--nav-text-color);
+}
+
+body.fly-theme header .nav-wrapper nav .nav-sections ul > li > a::before {
+  background: var(--main-accent-color);
+}
+
+body.fly-theme header .nav-wrapper nav .nav-sections ul > li > a:hover {
+  color: var(--main-accent-color);
 }
 
 /* Fly theme font sizes */

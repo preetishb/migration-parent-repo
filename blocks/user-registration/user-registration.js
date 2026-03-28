@@ -1,6 +1,5 @@
 import { readBlockConfig } from "../../scripts/aem.js";
 import { dispatchCustomEvent } from "../../scripts/custom-events.js";
-import { syncFormDataLayer, DEFAULT_FORM_FIELD_MAP, attachLiveFormSync } from "../../scripts/form-data-layer.js";
 
 function applyButtonConfigToSubmitButton(block, config) {
   const submitButton = block.querySelector("form button[type='submit']");
@@ -69,12 +68,12 @@ export default async function decorate(block) {
             properties: { colspan: 6 },
           },
           {
-            id: "isMember",
-            name: "isMember",
+            id: "wkndFlyMember",
+            name: "wkndFlyMember",
             fieldType: "drop-down",
             label: { value: "WKND Fly Member" },
-            enum: ["", "y", "n"],
-            enumNames: ["Select...", "Yes", "No"],
+            enum: ["", "member", "non-member"],
+            enumNames: ["Select...", "Member", "Non-member"],
             type: "string",
             properties: { colspan: 12 },
           },
@@ -125,11 +124,6 @@ export default async function decorate(block) {
     prePopulateFormFromDataLayer(block);
     attachFormSubmitHandler(block);
     addSignInLink(block);
-    const form = block.querySelector("form");
-    if (form) {
-      syncFormDataLayer(form, DEFAULT_FORM_FIELD_MAP);
-      attachLiveFormSync(form, DEFAULT_FORM_FIELD_MAP);
-    }
   }, 100);
 }
 
@@ -194,6 +188,8 @@ function attachFormSubmitHandler(block) {
       return;
     }
 
+    // Update dataLayer one final time with all form data
+    updateAllDataLayerFields(formData);
 
     // Simulate user registration (replace with actual API call)
     try {
@@ -277,6 +273,41 @@ function attachFormSubmitHandler(block) {
  * Updates all dataLayer fields at once
  * @param {Object} formData - All form data
  */
+function updateAllDataLayerFields(formData) {
+  if (!window.updateDataLayer) return;
+
+  const isMember = (formData.wkndFlyMember || "").toLowerCase() === "member" ? "y" : "n";
+  const updateObj = {
+    personalEmail: { address: formData.email || "" },
+    mobilePhone: { number: formData.phone || "" },
+    person: {
+      name: {
+        firstName: formData.firstName || "",
+        lastName: formData.lastName || "",
+      },
+      wkndFlyMember: formData.wkndFlyMember || "",
+      isMember: isMember === "y",
+    },
+    consents: {
+      marketing: {
+        email: {
+          val: formData.emailComm === "true" || formData.emailComm === true,
+        },
+      },
+    },
+    _demosystem4: {
+      identification: {
+        core: {
+          email: formData.email || null,
+          isMember,
+        },
+      },
+    },
+  };
+
+  window.updateDataLayer(updateObj);
+}
+
 /**
  * Generates a unique user ID
  * @returns {string} Unique user ID
@@ -423,7 +454,7 @@ const fieldToDataLayerMap = {
   lastName: "person.name.lastName",
   email: "personalEmail.address",
   phone: "mobilePhone.number",
-  isMember: "person.isMember",
+  wkndFlyMember: "person.wkndFlyMember",
   emailComm: "consents.marketing.email.val",
 };
 
