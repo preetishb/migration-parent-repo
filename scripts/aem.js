@@ -721,24 +721,6 @@ function applySectionItemWidths(section) {
   }
 }
 
-/**
- * Applies custom class(es) to section from UE field (same as hero Custom Styles). Space-separated for multiple.
- * @param {Element} section The section element
- * @param {string} value Class name(s), space-separated
- */
-function applySectionCustomClass(section, value) {
-  const prev = (section.dataset.secCustomStyles ?? '').trim();
-  if (prev) {
-    prev.split(/\s+/).filter(Boolean).forEach((c) => section.classList.remove(c));
-  }
-  delete section.dataset.secCustomStyles;
-  const next = (value ?? '').toString().trim();
-  if (next) {
-    section.dataset.secCustomStyles = next;
-    next.split(/\s+/).filter(Boolean).forEach((c) => section.classList.add(c));
-  }
-}
-
 function applySectionTextColor(section, colorValue) {
   const isHexColor = (s) => {
     const t = String(s).trim();
