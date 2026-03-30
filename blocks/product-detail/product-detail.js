@@ -27,7 +27,7 @@ async function fetchProductDetail(path, sku, isAuthor) {
     }
    const skuItem = isAuthor ? `;sku=${sku}` : `&sku=${sku}`;
     const baseUrl = isAuthor
-      ? "https://author-p165802-e1765367.adobeaemcloud.com/graphql/execute.json/luma3/getProductsByPathAndSKU;"
+      ? "https://author-p121371-e1189853.adobeaemcloud.com/graphql/execute.json/luma3/getProductsByPathAndSKU;"
       : "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/lumaProductsGrapghQlByPathAndSku?";
     const url = `${baseUrl}_path=${path}${skuItem}`;
     const resp = await fetch(url, {
@@ -59,7 +59,7 @@ async function fetchAllProducts(path, isAuthor) {
       return [];
     }
         const baseUrl = isAuthor
-      ? "https://author-p165802-e1765367.adobeaemcloud.com/graphql/execute.json/luma3/menproductspagelister;"
+      ? "https://author-p121371-e1189853.adobeaemcloud.com/graphql/execute.json/luma3/menproductspagelister;"
       : "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/lumaProductsGraphQl?";
     const url = `${baseUrl}_path=${path}`;
     const resp = await fetch(url, {
