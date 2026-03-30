@@ -36,27 +36,27 @@
         "rootPath": "/content/cq:tags/world-bank"
       },
       {
-          "component": "select",
-          "name": "theme",
-          "label": "Theme",
-          "options": [
-            {
-              "name": "default",
-              "value": ""
-            },
-            {
-              "name": "Mango Haze",
-              "value": "mango-haze"
-            },
-            {
-              "name": "Lavender Chill",
-              "value": "lavender-chill"
-            },
-             {
-              "name": "Meadow Light",
-              "value": "meadow-light"
-            }
-          ]
+        "component": "select",
+        "name": "theme",
+        "label": "Theme",
+        "options": [
+          {
+            "name": "default",
+            "value": ""
+          },
+          {
+            "name": "Mango Haze",
+            "value": "mango-haze"
+          },
+          {
+            "name": "Lavender Chill",
+            "value": "lavender-chill"
+          },
+          {
+            "name": "Meadow Light",
+            "value": "meadow-light"
+          }
+        ]
       },
       {
         "component": "text",
@@ -73,6 +73,95 @@
         "required": true
       }
     ]
+  },
+  {
+    "id": "cards",
+    "fields": [
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "classes",
+        "label": "Custom Style Classes",
+        "value": "",
+        "description": "Add custom CSS class names (space-separated). Example: feature-cards, image-left, bg-light-gray"
+      }
+    ]
+  },
+  {
+    "id": "category-products-lister",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "folder",
+        "label": "Products Folder (Content Fragments)",
+        "multi": false,
+        "validation": {
+          "rootPath": "/content/dam"
+        }
+      },
+      {
+        "component": "aem-tag",
+        "name": "cq:tags",
+        "label": "Tags",
+        "valueType": "string",
+        "rootPath": "/content/cq:tags/lumaproducts"
+      }
+    ]
+  },
+  {
+    "id": "product-detail",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "folder",
+        "label": "Product Folder",
+        "valueType": "string",
+        "required": true,
+        "rootPath": "/content/dam"
+      }
+    ]
+  },
+  {
+    "id": "new-arrival",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "folder",
+        "label": "Products Folder (Content Fragments)",
+        "multi": false,
+        "validation": {
+          "rootPath": "/content/dam"
+        }
+      },
+      {
+        "component": "text",
+        "name": "skus",
+        "label": "Product SKUs",
+        "valueType": "string[]",
+        "multi": true
+      }
+    ]
+  },
+  {
+    "id": "cart",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "folder",
+        "label": "Product Folder",
+        "valueType": "string",
+        "required": false,
+        "rootPath": "/content/dam"
+      }
+    ]
+  },
+  {
+    "id": "order-summary",
+    "fields": []
+  },
+  {
+    "id": "order-confirmation",
+    "fields": []
   },
   {
     "id": "image",
@@ -154,13 +243,34 @@
         "name": "linkType",
         "label": "Type",
         "options": [
-          { "name": "default", "value": "" },
-          { "name": "primary", "value": "primary" },
-          { "name": "secondary", "value": "secondary" },
-          { "name": "CTA", "value": "cta" },
-          { "name": "negative", "value": "negative" },
-          { "name": "link", "value": "link" },
-          { "name": "custom", "value": "custom" }
+          {
+            "name": "default",
+            "value": ""
+          },
+          {
+            "name": "primary",
+            "value": "primary"
+          },
+          {
+            "name": "secondary",
+            "value": "secondary"
+          },
+          {
+            "name": "CTA",
+            "value": "cta"
+          },
+          {
+            "name": "negative",
+            "value": "negative"
+          },
+          {
+            "name": "link",
+            "value": "link"
+          },
+          {
+            "name": "custom",
+            "value": "custom"
+          }
         ]
       },
       {
@@ -168,9 +278,18 @@
         "name": "alignment",
         "label": "Alignment",
         "options": [
-          { "name": "Left", "value": "left" },
-          { "name": "Center", "value": "center" },
-          { "name": "Right", "value": "right" }
+          {
+            "name": "Left",
+            "value": "left"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Right",
+            "value": "right"
+          }
         ]
       },
       {
@@ -314,8 +433,14 @@
         "valueType": "string",
         "value": "",
         "options": [
-          { "name": "default", "value": "" },
-          { "name": "Compact Style", "value": "compact-style" }
+          {
+            "name": "default",
+            "value": ""
+          },
+          {
+            "name": "Compact Style",
+            "value": "compact-style"
+          }
         ]
       },
       {
@@ -325,9 +450,18 @@
         "valueType": "string",
         "value": "button",
         "options": [
-          { "name": "Primary Button", "value": "button" },
-          { "name": "Secondary Button", "value": "button-secondary" },
-          { "name": "Dark Button", "value": "button-dark" }
+          {
+            "name": "Primary Button",
+            "value": "button"
+          },
+          {
+            "name": "Secondary Button",
+            "value": "button-secondary"
+          },
+          {
+            "name": "Dark Button",
+            "value": "button-dark"
+          }
         ]
       },
       {
@@ -348,9 +482,18 @@
         "name": "alignment",
         "label": "Alignment",
         "options": [
-          { "name": "Left", "value": "left" },
-          { "name": "Center", "value": "center" },
-          { "name": "Right", "value": "right" }
+          {
+            "name": "Left",
+            "value": "left"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Right",
+            "value": "right"
+          }
         ]
       },
       {
@@ -358,9 +501,18 @@
         "name": "verticalalignment",
         "label": "Vertical Alignment",
         "options": [
-          { "name": "Top", "value": "top" },
-          { "name": "Middle", "value": "middle" },
-          { "name": "Bottom", "value": "bottom" }
+          {
+            "name": "Top",
+            "value": "top"
+          },
+          {
+            "name": "Middle",
+            "value": "middle"
+          },
+          {
+            "name": "Bottom",
+            "value": "bottom"
+          }
         ]
       },
       {
@@ -468,13 +620,34 @@
         "name": "herolayout",
         "label": "Hero Layout Style",
         "options": [
-          { "name": "Default", "value": "overlay" },
-          { "name": "Image Left", "value": "image-left" },
-          { "name": "Image Right", "value": "image-right" },
-          { "name": "Image Top", "value": "image-top" },
-          { "name": "Image Bottom", "value": "image-bottom" },
-          { "name": "Image-Background Text-Left", "value": "image-background-text-left" },
-          { "name": "Image-Background Text-Right", "value": "image-background-text-right" }
+          {
+            "name": "Default",
+            "value": "overlay"
+          },
+          {
+            "name": "Image Left",
+            "value": "image-left"
+          },
+          {
+            "name": "Image Right",
+            "value": "image-right"
+          },
+          {
+            "name": "Image Top",
+            "value": "image-top"
+          },
+          {
+            "name": "Image Bottom",
+            "value": "image-bottom"
+          },
+          {
+            "name": "Image-Background Text-Left",
+            "value": "image-background-text-left"
+          },
+          {
+            "name": "Image-Background Text-Right",
+            "value": "image-background-text-right"
+          }
         ]
       },
       {
@@ -482,10 +655,22 @@
         "name": "ctastyle",
         "label": "CTA Style",
         "options": [
-          { "name": "default", "value": "" },
-          { "name": "Button", "value": "button" },
-          { "name": "Button secondary", "value": "button-secondary" },
-          { "name": "Link", "value": "link" }
+          {
+            "name": "default",
+            "value": ""
+          },
+          {
+            "name": "Button",
+            "value": "button"
+          },
+          {
+            "name": "Button secondary",
+            "value": "button-secondary"
+          },
+          {
+            "name": "Link",
+            "value": "link"
+          }
         ]
       },
       {
@@ -493,9 +678,18 @@
         "name": "backgroundstyle",
         "label": "Background Style",
         "options": [
-          { "name": "Default", "value": "default" },
-          { "name": "Theme Dark", "value": "theme-dark" },
-          { "name": "Theme Light", "value": "theme-light" }
+          {
+            "name": "Default",
+            "value": "default"
+          },
+          {
+            "name": "Theme Dark",
+            "value": "theme-dark"
+          },
+          {
+            "name": "Theme Light",
+            "value": "theme-light"
+          }
         ]
       },
       {
@@ -503,9 +697,18 @@
         "name": "alignment",
         "label": "Alignment",
         "options": [
-          { "name": "Left", "value": "left" },
-          { "name": "Center", "value": "center" },
-          { "name": "Right", "value": "right" }
+          {
+            "name": "Left",
+            "value": "left"
+          },
+          {
+            "name": "Center",
+            "value": "center"
+          },
+          {
+            "name": "Right",
+            "value": "right"
+          }
         ]
       },
       {
@@ -513,9 +716,18 @@
         "name": "verticalalignment",
         "label": "Vertical Alignment",
         "options": [
-          { "name": "Top", "value": "top" },
-          { "name": "Middle", "value": "middle" },
-          { "name": "Bottom", "value": "bottom" }
+          {
+            "name": "Top",
+            "value": "top"
+          },
+          {
+            "name": "Middle",
+            "value": "middle"
+          },
+          {
+            "name": "Bottom",
+            "value": "bottom"
+          }
         ]
       },
       {
