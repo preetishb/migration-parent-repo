@@ -339,14 +339,6 @@
         "label": "Border Width",
         "value": "",
         "valueType": "string"
-      },
-      {
-        "component": "text",
-        "name": "customStyles",
-        "label": "Custom Styles",
-        "value": "",
-        "valueType": "string",
-        "description": "Custom CSS styles"
       }
     ]
   },
@@ -8462,5 +8454,94 @@
         "description": "Space-separated class names to add to the block"
       }
     ]
+  },
+  {
+    "id": "cards",
+    "fields": [
+      {
+        "component": "text",
+        "valueType": "string",
+        "name": "classes",
+        "label": "Custom Style Classes",
+        "value": "",
+        "description": "Add custom CSS class names (space-separated). Example: feature-cards, image-left, bg-light-gray"
+      }
+    ]
+  },
+  {
+    "id": "category-products-lister",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "folder",
+        "label": "Products Folder (Content Fragments)",
+        "multi": false,
+        "validation": {
+          "rootPath": "/content/dam"
+        }
+      },
+      {
+        "component": "aem-tag",
+        "name": "cq:tags",
+        "label": "Tags",
+        "valueType": "string",
+        "rootPath": "/content/cq:tags/lumaproducts"
+      }
+    ]
+  },
+  {
+    "id": "product-detail",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "folder",
+        "label": "Product Folder",
+        "valueType": "string",
+        "required": true,
+        "rootPath": "/content/dam"
+      }
+    ]
+  },
+  {
+    "id": "new-arrival",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "folder",
+        "label": "Products Folder (Content Fragments)",
+        "multi": false,
+        "validation": {
+          "rootPath": "/content/dam"
+        }
+      },
+      {
+        "component": "text",
+        "name": "skus",
+        "label": "Product SKUs",
+        "valueType": "string[]",
+        "multi": true
+      }
+    ]
+  },
+  {
+    "id": "cart",
+    "fields": [
+      {
+        "component": "aem-content",
+        "name": "folder",
+        "label": "Product Folder",
+        "valueType": "string",
+        "required": false,
+        "rootPath": "/content/dam"
+      }
+    ]
+  },
+  {
+    "id": "order-summary",
+    "fields": []
+  },
+  {
+    "id": "order-confirmation",
+    "fields": []
   }
 ]

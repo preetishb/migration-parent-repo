@@ -257,14 +257,6 @@
         "label": "Border Width",
         "value": "",
         "valueType": "string"
-      },
-      {
-        "component": "text",
-        "name": "customStyles",
-        "label": "Custom Styles",
-        "value": "",
-        "valueType": "string",
-        "description": "Custom CSS styles"
       }
     ]
   },
