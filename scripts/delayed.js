@@ -100,7 +100,7 @@ function buildTwitterLinks() {
   });
 }
 
-function initializeCustomEventsWhenLaunchReady(timeoutMs = 5000) {
+function initializeCustomEventsWhenLaunchReady(timeoutMs = 2000) {
   if (window._launchReady === true || typeof window._satellite !== 'undefined') {
     initializeCustomEvents();
     return;
