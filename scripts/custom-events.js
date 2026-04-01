@@ -9,6 +9,7 @@ const LAUNCH_QUEUE_STORAGE_KEY = 'project_launch_event_queue';
 const LAUNCH_QUEUE_TTL_MS = 30 * 60 * 1000;
 const LAUNCH_QUEUE_MAX_EVENTS = 100;
 const LAUNCH_FLUSH_POLL_TIMEOUT_MS = 60000;
+const AT_VIEW_START_DELAY_MS = 1000;
 
 let pageViewHandled = false;
 
@@ -99,6 +100,13 @@ export function flushQueuedLaunchEvents() {
 export function dispatchCustomEvent(eventName, options = {}) {
   const name = eventName && String(eventName).trim();
   if (!name) return false;
+
+  if (name === 'at-view-start' && options.skipAtViewStartDelay !== true) {
+    setTimeout(() => {
+      dispatchCustomEvent(name, { ...options, skipAtViewStartDelay: true });
+    }, AT_VIEW_START_DELAY_MS);
+    return false;
+  }
 
   const dataLayerSnapshot = Object.prototype.hasOwnProperty.call(options, 'dataLayerSnapshot')
     ? options.dataLayerSnapshot
