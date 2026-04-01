@@ -121,6 +121,69 @@ function processDataLayerQueue() {
   }
 }
 
+function executeAddToCart(productData) {
+  if (!_dataLayer) {
+    console.error('DataLayer not available for cart operation');
+    return;
+  }
+
+  const existingCart = isObject(_dataLayer.cart) ? _dataLayer.cart : {};
+  const currentCart = {
+    ...existingCart,
+    products: isObject(existingCart.products) ? { ...existingCart.products } : {},
+    productCount: 0,
+    subTotal: 0,
+    total: 0,
+  };
+
+  const productKey = productData.id;
+  const quantityToAdd = Math.max(1, parseInt(productData.quantity, 10) || 1);
+  const unitPrice = Number(productData.price) || 0;
+
+  if (currentCart.products[productKey]) {
+    const currentQty = parseInt(currentCart.products[productKey].quantity, 10) || 0;
+    const existingUnitPrice = Number(currentCart.products[productKey].price) || unitPrice;
+    const nextQty = currentQty + quantityToAdd;
+    currentCart.products[productKey].quantity = nextQty;
+    currentCart.products[productKey].subTotal = nextQty * existingUnitPrice;
+    currentCart.products[productKey].total = currentCart.products[productKey].subTotal;
+  } else {
+    currentCart.products[productKey] = {
+      id: productData.id,
+      sku: productData.sku || productData.id,
+      name: productData.name,
+      image: productData.image,
+      thumbnail: productData.thumbnail,
+      category: productData.category,
+      description: productData.description,
+      quantity: quantityToAdd,
+      price: unitPrice,
+      subTotal: unitPrice * quantityToAdd,
+      total: unitPrice * quantityToAdd,
+    };
+  }
+
+  const productValues = Object.values(currentCart.products);
+  currentCart.productCount = productValues.reduce(
+    (sum, p) => sum + (parseInt(p.quantity, 10) || 0),
+    0,
+  );
+  currentCart.subTotal = productValues.reduce((sum, p) => {
+    const subTotal = Number(p.subTotal);
+    if (!Number.isNaN(subTotal)) return sum + subTotal;
+    return sum + ((Number(p.price) || 0) * (parseInt(p.quantity, 10) || 0));
+  }, 0);
+  currentCart.total = currentCart.subTotal;
+
+  if (typeof window.updateDataLayer === 'function') {
+    window.updateDataLayer({ cart: currentCart }, false);
+  } else {
+    _dataLayer.cart = currentCart;
+    syncWindowDataLayer();
+    dispatchDataLayerEvent('updated');
+  }
+}
+
 /**
  * Initial dataLayer structure only from paths in data-elements.json.
  * project: only id, currency (Project-ID, Currency). No locale.
@@ -236,6 +299,20 @@ window.updateDataLayer = function (updates, merge = true) {
   }
   window._dataLayerUpdating = false;
   dispatchDataLayerEvent('updated');
+};
+
+window.addToCart = function (productData) {
+  if (!productData || !productData.id) {
+    console.error('Invalid product data provided to addToCart');
+    return;
+  }
+
+  if (!window._dataLayerReady || !_dataLayer || typeof window.updateDataLayer !== 'function') {
+    console.warn('addToCart called before dataLayer was ready; cart update skipped.', { productId: productData.id });
+    return;
+  }
+
+  executeAddToCart(productData);
 };
 
 window.resetDataLayerToInitial = async function (options = {}) {
