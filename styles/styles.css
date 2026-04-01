@@ -1773,6 +1773,11 @@ main .section.home-getoffer-container > div:nth-child(1) .cards > ul > li img {
     background-position: 50% 40%;
     background-repeat: no-repeat
 }
+.luma-theme .TopRibbon {
+    display: flex;
+    justify-content: center;
+    background-color: #fafafa;
+}
 .Page .TopRibbon__content {
     max-width: 1200px;
     margin: 0 auto
