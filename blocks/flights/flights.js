@@ -2,20 +2,37 @@
 import { isAuthorEnvironment } from '../../scripts/scripts.js';
 import { readBlockConfig } from '../../scripts/aem.js';
 import { dispatchCustomEvent } from '../../scripts/custom-events.js';
+import { getEnvironmentValue, getHostname } from '../../scripts/utils.js';
 
-const AUTHOR_GRAPHQL_BASE_For_Search = 'https://author-p189874-e1977911.adobeaemcloud.com/graphql/execute.json/wknd-fly/flight-details-list-with-path';
+const AUTHOR_GRAPHQL_BASE_For_Search = '/graphql/execute.json/wknd-fly/flight-details-list-with-path';
 const PUBLISH_GRAPHQL_BASE_For_Search = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-details-list';
 
-const AUTHOR_GRAPHQL_BASE_For_Destination = 'https://author-p189874-e1977911.adobeaemcloud.com/graphql/execute.json/wknd-fly/flight-details-list-for-destination-page-with-path';
+const AUTHOR_GRAPHQL_BASE_For_Destination = '/graphql/execute.json/wknd-fly/flight-details-list-for-destination-page-with-path';
 const PUBLISH_GRAPHQL_BASE_For_Destination = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-details-list';
 
-const AUTHOR_GRAPHQL_BASE_For_Dropdown = 'https://author-p189874-e1977911.adobeaemcloud.com/graphql/execute.json/wknd-fly/flight-source-dropdown';
+const AUTHOR_GRAPHQL_BASE_For_Dropdown = '/graphql/execute.json/wknd-fly/flight-source-dropdown';
 const PUBLISH_GRAPHQL_BASE_For_Dropdown = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-source-dropdown';
+const DEFAULT_PUBLISH_ENVIRONMENT = 'p189874-e1977911';
 
 const DEFAULT_FLIGHT_LIST_CONTENT_FRAGMENT_PATH = '/content/dam/wknd-fly/en/fragments/flight-details';
 
 let selectButtonDataAttributes = {};
 let flightListPathForGraphQL = DEFAULT_FLIGHT_LIST_CONTENT_FRAGMENT_PATH;
+let flightApiConfigPromise;
+
+async function getFlightApiConfig() {
+  if (!flightApiConfigPromise) {
+    flightApiConfigPromise = (async () => {
+      const placeholderHost = await getHostname();
+      const placeholderEnv = await getEnvironmentValue();
+      return {
+        authorBase: (placeholderHost || '').replace(/\/$/, ''),
+        environment: placeholderEnv || DEFAULT_PUBLISH_ENVIRONMENT,
+      };
+    })();
+  }
+  return flightApiConfigPromise;
+}
 
 // Sample airport data (shared with flight-search)
 const FALLBACK_AIRPORTS = [
@@ -169,9 +186,10 @@ async function fetchFlightsFromGraphQL(from, to) {
   const toCode = (to || '').toUpperCase();
   const isAuthor = isAuthorEnvironment();
   try {
+    const { authorBase, environment } = await getFlightApiConfig();
     const url = isAuthor
-      ? `${AUTHOR_GRAPHQL_BASE_For_Search};from=${encodeURIComponent(fromCode)};to=${encodeURIComponent(toCode)};path=${flightListPathForGraphQL};ts=${Date.now()}`
-      : `${PUBLISH_GRAPHQL_BASE_For_Search}?environment=p189874-e1977911&endpoint=flight-details-list&from=${encodeURIComponent(fromCode)}&to=${encodeURIComponent(toCode)}&path=${flightListPathForGraphQL}&time=${Date.now()}`;
+      ? `${authorBase}${AUTHOR_GRAPHQL_BASE_For_Search};from=${encodeURIComponent(fromCode)};to=${encodeURIComponent(toCode)};path=${flightListPathForGraphQL};ts=${Date.now()}`
+      : `${PUBLISH_GRAPHQL_BASE_For_Search}?environment=${environment}&endpoint=flight-details-list&from=${encodeURIComponent(fromCode)}&to=${encodeURIComponent(toCode)}&path=${flightListPathForGraphQL}&time=${Date.now()}`;
     const response = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -197,9 +215,10 @@ async function fetchFlightsForDestination(destination) {
   const isAuthor = isAuthorEnvironment();
   const encoded = encodeURIComponent(String(destination).trim());
   try {
+    const { authorBase, environment } = await getFlightApiConfig();
     const url = isAuthor
-      ? `${AUTHOR_GRAPHQL_BASE_For_Destination};to=${encoded};path=${flightListPathForGraphQL};ts=${Date.now()}`
-      : `${PUBLISH_GRAPHQL_BASE_For_Destination}?environment=p189874-e1977911&endpoint=flight-details-list-for-destination-page&to=${encoded}&path=${flightListPathForGraphQL}&time=${Date.now()}`;
+      ? `${authorBase}${AUTHOR_GRAPHQL_BASE_For_Destination};to=${encoded};path=${flightListPathForGraphQL};ts=${Date.now()}`
+      : `${PUBLISH_GRAPHQL_BASE_For_Destination}?environment=${environment}&endpoint=flight-details-list-for-destination-page&to=${encoded}&path=${flightListPathForGraphQL}&time=${Date.now()}`;
     const response = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
@@ -285,9 +304,10 @@ async function fetchAirportsFromGraphQL(contentFragmentPath) {
   if (!contentFragmentPath) return [];
   const isAuthor = isAuthorEnvironment();
   try {
+    const { authorBase, environment } = await getFlightApiConfig();
     const url = isAuthor
-      ? `${AUTHOR_GRAPHQL_BASE_For_Dropdown};path=${contentFragmentPath};ts=${Date.now()}`
-      : `${PUBLISH_GRAPHQL_BASE_For_Dropdown}?environment=p189874-e1977911&path=${contentFragmentPath}&time=${Date.now()}`;
+      ? `${authorBase}${AUTHOR_GRAPHQL_BASE_For_Dropdown};path=${contentFragmentPath};ts=${Date.now()}`
+      : `${PUBLISH_GRAPHQL_BASE_For_Dropdown}?environment=${environment}&path=${contentFragmentPath}&time=${Date.now()}`;
     const response = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },

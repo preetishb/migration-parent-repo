@@ -2,10 +2,26 @@
 import { readBlockConfig } from '../../scripts/aem.js';
 import { dispatchCustomEvent } from '../../scripts/custom-events.js';
 import { isAuthorEnvironment } from '../../scripts/scripts.js';
-import { getPathDetails } from '../../scripts/utils.js';
+import { getEnvironmentValue, getHostname, getPathDetails } from '../../scripts/utils.js';
 
-const AUTHOR_GRAPHQL_BASE_For_Dropdown = 'https://author-p189874-e1977911.adobeaemcloud.com/graphql/execute.json/wknd-fly/flight-source-dropdown';
+const AUTHOR_GRAPHQL_BASE_For_Dropdown = '/graphql/execute.json/wknd-fly/flight-source-dropdown';
 const PUBLISH_GRAPHQL_BASE_For_Dropdown = 'https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/flight-source-dropdown';
+const DEFAULT_PUBLISH_ENVIRONMENT = 'p189874-e1977911';
+let flightSearchApiConfigPromise;
+
+async function getFlightSearchApiConfig() {
+  if (!flightSearchApiConfigPromise) {
+    flightSearchApiConfigPromise = (async () => {
+      const placeholderHost = await getHostname();
+      const placeholderEnv = await getEnvironmentValue();
+      return {
+        authorBase: (placeholderHost || '').replace(/\/$/, ''),
+        environment: placeholderEnv || DEFAULT_PUBLISH_ENVIRONMENT,
+      };
+    })();
+  }
+  return flightSearchApiConfigPromise;
+}
 
 // Sample airport data
 const FALLBACK_AIRPORTS = [
@@ -120,9 +136,10 @@ async function fetchAirportsFromGraphQL(contentFragmentPath) {
   if (!contentFragmentPath) return [];
   const isAuthor = isAuthorEnvironment();
   try {
+    const { authorBase, environment } = await getFlightSearchApiConfig();
     const url = isAuthor
-      ? `${AUTHOR_GRAPHQL_BASE_For_Dropdown};path=${contentFragmentPath};ts=${Date.now()}`
-      : `${PUBLISH_GRAPHQL_BASE_For_Dropdown}?environment=p189874-e1977911&endpoint=flight-source-dropdown&path=${contentFragmentPath}&time=${Date.now()}`;
+      ? `${authorBase}${AUTHOR_GRAPHQL_BASE_For_Dropdown};path=${contentFragmentPath};ts=${Date.now()}`
+      : `${PUBLISH_GRAPHQL_BASE_For_Dropdown}?environment=${environment}&endpoint=flight-source-dropdown&path=${contentFragmentPath}&time=${Date.now()}`;
     const response = await fetch(url, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
