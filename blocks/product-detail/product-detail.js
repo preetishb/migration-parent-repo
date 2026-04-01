@@ -1,6 +1,7 @@
 import { createOptimizedPicture, readBlockConfig } from "../../scripts/aem.js";
 import { isAuthorEnvironment } from "../../scripts/scripts.js";
 import { dispatchCustomEvent } from "../../scripts/custom-events.js";
+import { addProductToCart } from "../../scripts/cart-store.js";
 
 /**
  * Get query parameter from URL
@@ -306,8 +307,7 @@ function buildProductDetail(product, isAuthor) {
             .join(", ")
         : "";
 
-    // Use the global addToCart function (handles queuing automatically)
-    window.addToCart({
+    addProductToCart({
       id: id || sku || "",
       name: name || "",
       image: imageUrl || "",

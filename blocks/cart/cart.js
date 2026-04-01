@@ -1,5 +1,13 @@
 import { createOptimizedPicture, readBlockConfig } from "../../scripts/aem.js";
 import { isAuthorEnvironment } from "../../scripts/scripts.js";
+import {
+  getCartSnapshot,
+  getEmptyCart,
+  saveCartSnapshot,
+  removeProductFromCart,
+  setCartItemQuantity,
+  syncFallbackCart,
+} from "../../scripts/cart-store.js";
 
 /**
  * Format price as currency
@@ -37,43 +45,15 @@ function updateCartTotals(block, cartData) {
  * @param {HTMLElement} block - Cart block element
  */
 function removeFromCart(productId, block) {
-  const currentCart = window.getDataLayerProperty("cart") || {
-    productCount: 0,
-    products: {},
-    subTotal: 0,
-    total: 0,
-  };
+  const currentCart = getCartSnapshot();
 
   if (currentCart.products[productId]) {
-    delete currentCart.products[productId];
-
-    // Recalculate totals
-    const productValues = Object.values(currentCart.products);
-    currentCart.productCount = productValues.reduce(
-      (sum, p) => sum + p.quantity,
-      0
-    );
-    currentCart.subTotal = productValues.reduce(
-      (sum, p) => sum + p.subTotal,
-      0
-    );
-    currentCart.total = currentCart.subTotal;
-
-    // Update dataLayer (use merge=false to replace entire cart, not deep merge)
-    // This ensures deleted products are actually removed, not merged back
-    if (window.updateDataLayer) {
-      window.updateDataLayer({ cart: currentCart }, false);
-      console.log(
-        `Removed product ${productId} from cart. New cart:`,
-        currentCart
-      );
-    } else {
-      console.error("updateDataLayer not available");
-    }
+    const nextCart = removeProductFromCart(currentCart, productId);
+    saveCartSnapshot(nextCart);
 
     // Refresh cart display
-    renderCartItems(block, currentCart);
-    updateCartTotals(block, currentCart);
+    renderCartItems(block, nextCart);
+    updateCartTotals(block, nextCart);
   }
 }
 
@@ -90,46 +70,21 @@ function updateQuantity(productId, newQuantity, block) {
     return;
   }
 
-  const currentCart = window.getDataLayerProperty("cart") || {
-    productCount: 0,
-    products: {},
-    subTotal: 0,
-    total: 0,
-  };
+  const currentCart = getCartSnapshot();
 
   if (currentCart.products[productId]) {
-    currentCart.products[productId].quantity = quantity;
-    currentCart.products[productId].subTotal =
-      quantity * currentCart.products[productId].price;
-    currentCart.products[productId].total =
-      currentCart.products[productId].subTotal;
-
-    // Recalculate cart totals
-    const productValues = Object.values(currentCart.products);
-    currentCart.productCount = productValues.reduce(
-      (sum, p) => sum + p.quantity,
-      0
-    );
-    currentCart.subTotal = productValues.reduce(
-      (sum, p) => sum + p.subTotal,
-      0
-    );
-    currentCart.total = currentCart.subTotal;
-
-    // Update dataLayer (use merge=false to replace entire cart)
-    window.updateDataLayer({ cart: currentCart }, false);
+    const nextCart = setCartItemQuantity(currentCart, productId, quantity);
+    saveCartSnapshot(nextCart);
 
     // Update display
-    updateCartTotals(block, currentCart);
+    updateCartTotals(block, nextCart);
 
     // Update individual product total
     const productRow = block.querySelector(`[data-product-id="${productId}"]`);
     if (productRow) {
       const priceEl = productRow.querySelector(".cart-item-price");
       if (priceEl) {
-        priceEl.textContent = formatPrice(
-          currentCart.products[productId].subTotal
-        );
+        priceEl.textContent = formatPrice(nextCart.products[productId].subTotal);
       }
     }
   }
@@ -339,7 +294,7 @@ function applyDiscount(code, block) {
  * Handle checkout
  */
 function handleCheckout() {
-  const cartData = window.getDataLayerProperty("cart");
+  const cartData = getCartSnapshot();
   if (!cartData || !cartData.productCount || cartData.productCount === 0) {
     alert("Your cart is empty");
     return;
@@ -636,6 +591,7 @@ function setupDataLayerListener(block, folderHref, isAuthor, allProducts) {
   document.addEventListener("dataLayerUpdated", async (event) => {
     const { dataLayer } = event.detail;
     if (dataLayer && dataLayer.cart) {
+      syncFallbackCart(dataLayer.cart);
       renderCartItems(block, dataLayer.cart);
       updateCartTotals(block, dataLayer.cart);
 
@@ -708,22 +664,7 @@ export default async function decorate(block) {
   mainSection.appendChild(itemsContainer);
 
   // Get cart data from dataLayer
-  const cartData = window.getDataLayerProperty
-    ? window.getDataLayerProperty("cart")
-    : null;
-
-  if (!window.getDataLayerProperty) {
-    console.warn(
-      "⚠️ getDataLayerProperty not available yet - cart may not display correctly"
-    );
-  }
-
-  const currentCart = cartData || {
-    productCount: 0,
-    products: {},
-    subTotal: 0,
-    total: 0,
-  };
+  const currentCart = getCartSnapshot() || getEmptyCart();
 
   // Build cart summary
   const summary = buildCartSummary(currentCart);
