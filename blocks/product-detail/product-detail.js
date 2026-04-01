@@ -469,4 +469,5 @@ export default async function decorate(block) {
   if (recommendations) {
     block.appendChild(recommendations);
   }
+  dispatchCustomEvent("at-view-star");
 }
