@@ -66,7 +66,7 @@ async function fetchProductDetail(path, sku, isAuthor) {
       },
     });
     const json = await resp.json();
-    const items = json?.data?.productsModelList?.items || [];
+    const items = json?.data?.lumaProductsModelList?.items || [];
     return items.length > 0 ? items[0] : null;
   } catch (e) {
     // eslint-disable-next-line no-console
@@ -99,7 +99,7 @@ async function fetchAllProducts(path, isAuthor) {
       },
     });
     const json = await resp.json();
-    const items = json?.data?.productsModelList?.items || [];
+    const items = json?.data?.lumaProductsModelList?.items || [];
     const filtered = items.filter((item) => item && item.sku);
     return filtered;
   } catch (e) {

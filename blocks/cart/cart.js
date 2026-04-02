@@ -442,7 +442,7 @@ async function fetchAllProducts(path, isAuthor) {
       },
     });
     const json = await resp.json();
-    const items = json?.data?.productsModelList?.items || [];
+    const items = json?.data?.lumaProductsModelList?.items || [];
     const filtered = items.filter((item) => item && item.sku);
     return filtered;
   } catch (e) {

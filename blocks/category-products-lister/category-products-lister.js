@@ -113,7 +113,7 @@ async function fetchProducts(path) {
       },
     });
     const json = await resp.json();
-    return json?.data?.productsModelList?.items || [];
+    return json?.data?.lumaProductsModelList?.items || [];
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error("Category Products Lister: fetch error", e);

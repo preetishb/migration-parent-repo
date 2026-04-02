@@ -133,7 +133,7 @@ async function fetchProducts(path) {
       },
     });
     const json = await resp.json();
-    const items = json?.data?.productsModelList?.items || [];
+    const items = json?.data?.lumaProductsModelList?.items || [];
     // Filter out null/invalid products
     return items.filter((item) => item && item.sku);
   } catch (e) {
