@@ -1,3 +1,7 @@
+@import url('./slider.css');
+@import url('./membership.css');
+@import url('./iframe.css');
+
 body.luma-theme {
   --main-accent-color: #3273DE;
   --link-hover-color: #3273DE;
