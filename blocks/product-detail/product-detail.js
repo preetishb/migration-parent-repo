@@ -1,4 +1,4 @@
-import { createOptimizedPicture, readBlockConfig } from "../../scripts/aem.js";
+import { createLumaProductImagePicture, readBlockConfig } from "../../scripts/aem.js";
 import { isAuthorEnvironment } from "../../scripts/scripts.js";
 import { dispatchCustomEvent } from "../../scripts/custom-events.js";
 import { addProductToCart } from "../../scripts/cart-store.js";
@@ -117,7 +117,6 @@ async function fetchAllProducts(path, isAuthor) {
  */
 function buildRecommendationCard(item, isAuthor) {
   const { id, sku, name, damImageURL = {}, category = [] } = item || {};
-  const imgUrl = isAuthor ? damImageURL?._authorUrl : damImageURL?._publishUrl;
   const productId = sku || id || "";
 
   const card = document.createElement("article");
@@ -157,23 +156,12 @@ function buildRecommendationCard(item, isAuthor) {
     });
   }
 
-  // Handle image display for author vs publish
   let picture = null;
-  if (imgUrl) {
-    if (!isAuthor && imgUrl.startsWith("http")) {
-      picture = document.createElement("picture");
-      const img = document.createElement("img");
-      img.src = imgUrl;
-      img.alt = name || "Product image";
-      img.loading = "lazy";
-      picture.appendChild(img);
-    } else {
-      picture = createOptimizedPicture(imgUrl, name || "Product image", false, [
-        { media: "(min-width: 900px)", width: "600" },
-        { media: "(min-width: 600px)", width: "400" },
-        { width: "320" },
-      ]);
-    }
+  if (damImageURL && (damImageURL._dynamicUrl || damImageURL._publishUrl || damImageURL._authorUrl)) {
+    picture = createLumaProductImagePicture(damImageURL, name || "Product image", {
+      isAuthor,
+      eager: false,
+    });
   }
 
   const imgWrap = document.createElement("div");
@@ -252,25 +240,11 @@ function buildProductDetail(product, isAuthor, eventConfig = {}) {
   const imageSection = document.createElement("div");
   imageSection.className = "pd-image";
 
-  const imgUrl = imageUrl;
-  if (imgUrl) {
-    let picture = null;
-    if (!isAuthor && imgUrl.startsWith("http")) {
-      // For publish with full URL, use it directly
-      picture = document.createElement("picture");
-      const img = document.createElement("img");
-      img.src = imgUrl;
-      img.alt = name || "Product image";
-      img.loading = "eager";
-      picture.appendChild(img);
-    } else {
-      // For author or relative paths, use createOptimizedPicture
-      picture = createOptimizedPicture(imgUrl, name || "Product image", true, [
-        { media: "(min-width: 900px)", width: "800" },
-        { media: "(min-width: 600px)", width: "600" },
-        { width: "400" },
-      ]);
-    }
+  if (damImageURL && (damImageURL._dynamicUrl || damImageURL._publishUrl || damImageURL._authorUrl)) {
+    const picture = createLumaProductImagePicture(damImageURL, name || "Product image", {
+      isAuthor,
+      eager: true,
+    });
     if (picture) imageSection.appendChild(picture);
   }
 

@@ -106,8 +106,15 @@ export default function decorate(block) {
     i += 1;
   });
 
+  const carouselPictureBreakpoints = document.body.classList.contains('luma-theme')
+    ? [
+      { media: '(min-width: 600px)', width: '600' },
+      { width: '400' },
+    ]
+    : [{ width: '750' }];
+
   slider.querySelectorAll('picture > img').forEach((img) => {
-    const optimizedPic = createOptimizedPicture(img.src, img.alt, false, [{ width: '750' }]);
+    const optimizedPic = createOptimizedPicture(img.src, img.alt, false, carouselPictureBreakpoints);
     moveInstrumentation(img, optimizedPic.querySelector('img'));
     img.closest('picture').replaceWith(optimizedPic);
   });
