@@ -337,6 +337,10 @@ function createCarousel(block, cards) {
   }
 
   function getVisibleCards() {
+    if (window.innerWidth > 1200) {
+      return Math.min(5, cards.length);
+    }
+
     // Get the wrapper's inner width to determine available space
     const wrapperWidth = carouselWrapper.offsetWidth;
 
@@ -344,7 +348,6 @@ function createCarousel(block, cards) {
     if (!wrapperWidth || wrapperWidth < 100) {
       const width = window.innerWidth;
       // Return reasonable defaults based on screen size
-      if (width >= 1200) return Math.min(4, cards.length);
       if (width >= 900) return Math.min(3, cards.length);
       if (width >= 600) return Math.min(2, cards.length);
       return 1;
@@ -397,6 +400,7 @@ function createCarousel(block, cards) {
     const needsScrolling = cards.length > visibleCards;
     prevBtn.style.display = needsScrolling ? "flex" : "none";
     nextBtn.style.display = needsScrolling ? "flex" : "none";
+    track.classList.toggle("is-centered", !needsScrolling);
   }
 
   prevBtn.addEventListener("click", (e) => {

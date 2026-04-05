@@ -52,6 +52,10 @@
   transition: transform 0.4s ease-in-out;
 }
 
+.na-carousel-track.is-centered {
+  justify-content: center;
+}
+
 /* Card Styles */
 .na-card {
   flex: 0 0 227.2px;
