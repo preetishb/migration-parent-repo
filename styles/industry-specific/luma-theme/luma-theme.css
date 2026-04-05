@@ -175,7 +175,10 @@ body.luma-theme .iframe.block iframe {
     color: #000000;
   }
 }
-
+body.luma-theme .hero.block{
+  min-height: 500px;
+  height: 500px;
+}
 
 /*membership*/
 body.luma-theme main .membership .membership-title {
