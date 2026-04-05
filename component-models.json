@@ -8527,6 +8527,30 @@
         "valueType": "string",
         "required": true,
         "rootPath": "/content/dam"
+      },
+      {
+        "component": "text",
+        "name": "productvieweventtype",
+        "label": "Product View Event Type",
+        "value": "at-view-start",
+        "valueType": "string",
+        "description": "Launch event fired when product page loads. Default: at-view-start"
+      },
+      {
+        "component": "text",
+        "name": "addtocarteventtype",
+        "label": "Add To Cart Event Type",
+        "value": "addToCart",
+        "valueType": "string",
+        "description": "Launch event fired on Add to Cart click. Default: addToCart"
+      },
+      {
+        "component": "text",
+        "name": "addtowishlisteventtype",
+        "label": "Add To Wishlist Event Type",
+        "value": "commerce.saveForLaters",
+        "valueType": "string",
+        "description": "Launch event fired on Add to Wishlist click. Default: commerce.saveForLaters"
       }
     ]
   },
@@ -8566,7 +8590,16 @@
   },
   {
     "id": "order-summary",
-    "fields": []
+    "fields": [
+      {
+        "component": "text",
+        "name": "checkouteventtype",
+        "label": "Checkout Event Type",
+        "value": "checkout",
+        "valueType": "string",
+        "description": "Launch event fired when order summary loads. Default: checkout"
+      }
+    ]
   },
   {
     "id": "order-confirmation",

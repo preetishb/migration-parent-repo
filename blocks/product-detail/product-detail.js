@@ -205,7 +205,7 @@ function buildRecommendationCard(item, isAuthor) {
  * @param {boolean} isAuthor - Is author environment
  * @returns {HTMLElement} - Product detail container
  */
-function buildProductDetail(product, isAuthor) {
+function buildProductDetail(product, isAuthor, eventConfig = {}) {
   const {
     name,
     price,
@@ -344,7 +344,7 @@ function buildProductDetail(product, isAuthor) {
       price: price || 0,
       quantity: 1,
     });
-    dispatchCustomEvent("addToCart");
+    dispatchCustomEvent(eventConfig.addToCart || "addToCart");
 
     // Show visual feedback
     addToCartBtn.textContent = "Added to Cart ✓";
@@ -359,7 +359,7 @@ function buildProductDetail(product, isAuthor) {
   addToWishlistBtn.setAttribute("aria-label", `Add ${name} to wishlist`);
   addToWishlistBtn.addEventListener("click", () => {
     // TODO: Implement wishlist functionality
-    dispatchCustomEvent("commerce.saveForLaters");
+    dispatchCustomEvent(eventConfig.addToWishlist || "commerce.saveForLaters");
   });
 
   actionsEl.append(addToCartBtn, addToWishlistBtn);
@@ -427,13 +427,20 @@ function buildRecommendations(currentProduct, allProducts, isAuthor) {
 export default async function decorate(block) {
   const isAuthor = isAuthorEnvironment();
 
+  // Read block config for authorable event types and folder path
+  const config = readBlockConfig(block);
+  const eventConfig = {
+    productView: (config.productvieweventtype || config['product-view-event-type'] || '').trim() || 'at-view-start',
+    addToCart: (config.addtocarteventtype || config['add-to-cart-event-type'] || '').trim() || 'addToCart',
+    addToWishlist: (config.addtowishlisteventtype || config['add-to-wishlist-event-type'] || '').trim() || 'commerce.saveForLaters',
+  };
+
   // Extract folder path from block config
   let folderHref = "";
   const link = block.querySelector("a[href]");
   if (link) {
     folderHref = link.getAttribute("href");
   } else {
-    const config = readBlockConfig(block);
     folderHref = config.folder || "";
   }
 
@@ -488,7 +495,7 @@ export default async function decorate(block) {
   }
 
   // Display product detail
-  const productDetail = buildProductDetail(product, isAuthor);
+  const productDetail = buildProductDetail(product, isAuthor, eventConfig);
   block.appendChild(productDetail);
 
   // Display recommendations
@@ -496,5 +503,5 @@ export default async function decorate(block) {
   if (recommendations) {
     block.appendChild(recommendations);
   }
-  dispatchCustomEvent("at-view-start");
+  dispatchCustomEvent(eventConfig.productView);
 }
