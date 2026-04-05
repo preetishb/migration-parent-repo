@@ -443,74 +443,18 @@ function prePopulateFormFromDataLayer(block) {
     return path.split(".").reduce((current, prop) => current?.[prop], obj);
   };
 
-  // Populate each field from dataLayer
-  const setFieldValue = (fieldName, path) => {
+  Object.entries(DEFAULT_FORM_FIELD_MAP).forEach(([fieldName, path]) => {
     const value = getNestedProperty(dataLayer, path);
-    if (value !== undefined && value !== null && value !== "") {
-      const field = form.querySelector(`[name="${fieldName}"]`);
-      if (!field) return;
+    if (value === undefined || value === null || value === "") return;
+    const field = form.querySelector(`[name="${fieldName}"]`);
+    if (!field) return;
 
-      if (field.type === "checkbox") {
-        field.checked = value === true || value === "true";
-      } else if (field.tagName.toLowerCase() === "select") {
-        field.value = value;
-      } else {
-        field.value = value;
-      }
-    }
-  };
-
-  // Populate standard fields using DEFAULT_FORM_FIELD_MAP paths
-  setFieldValue("firstName", "person.name.firstName");
-  setFieldValue("lastName", "person.name.lastName");
-  setFieldValue("email", "personalEmail.address");
-  setFieldValue("phone", "mobilePhone.number");
-  
-  // Populate custom fields
-  setFieldValue("wkndFlyMember", "person.wkndFlyMember");
-
-  // Pre-populate email communication checkbox
-  const emailCommVal = getNestedProperty(dataLayer, "consents.marketing.email.val");
-  if (emailCommVal === true || emailCommVal === "true") {
-    const emailCommField = form.querySelector('[name="emailComm"]');
-    if (emailCommField) emailCommField.checked = true;
-  }
-}
-
-
-
-/**
- * Handles field update and triggers dataLayer update
- * @param {HTMLFormElement} form - The form element
- * @param {string} fieldName - Field name
- * @param {HTMLElement} field - Field element
- */
-function handleFieldUpdate(form, fieldName, field) {
-  let value;
-
-  if (field.type === "checkbox") {
-    // Handle checkbox groups (multiple checkboxes with same name)
-    const checkboxes = form.querySelectorAll(`input[name="${fieldName}"]`);
-    if (checkboxes.length > 1) {
-      // Checkbox group
-      value = Array.from(checkboxes)
-        .filter((cb) => cb.checked)
-        .map((cb) => cb.value);
+    if (field.type === "checkbox") {
+      field.checked = value === true || value === "true" || value === "y";
+    } else if (field.tagName.toLowerCase() === "select") {
+      field.value = value;
     } else {
-      // Single checkbox
-      value = field.checked ? field.value || "true" : "";
+      field.value = value;
     }
-  } else if (field.type === "radio") {
-    // For radio buttons, only update if this one is checked
-    if (field.checked) {
-      value = field.value;
-    } else {
-      return; // Don't update if radio is not checked
-    }
-  } else {
-    // Text, select, textarea
-    value = field.value;
-  }
-
-  updateDataLayerField(fieldName, value);
+  });
 }
