@@ -396,7 +396,12 @@ li.teaser-card.cards-card--overlay-background-off .cards-card-body {
   justify-content: center;
   text-align: center;
 }
-
+.cards > ul > li.teaser-overlay.card-bottom-overlay .button-container.cta-link a:hover {
+    color: var(--main-accent-color) !important;
+    text-decoration: none;
+    color: inherit;
+    color: inherit !important;
+}
 .cards > ul > li.teaser-overlay.card-bottom-overlay .cards-card-body > * {
   width: 100%;
 }
