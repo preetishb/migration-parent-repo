@@ -1,9 +1,31 @@
-import { readBlockConfig, createOptimizedPicture } from "../../scripts/aem.js";
+import { readBlockConfig, createLumaProductImagePicture } from "../../scripts/aem.js";
 import { isAuthorEnvironment } from "../../scripts/scripts.js";
+import { getEnvironmentValue, getHostname } from "../../scripts/utils.js";
+
+const AUTHOR_PRODUCTS_ENDPOINT = "/graphql/execute.json/luma3/lumaProductListByPath;";
+const PUBLISH_GRAPHQL_PROXY_ENDPOINT = "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/luma-fetch";
+const PUBLISH_PRODUCTS_ENDPOINT_KEY = "lumaProductListByPath";
+let newArrivalAuthorBasePromise;
+let newArrivalPublishEnvironmentPromise;
+
+async function getNewArrivalAuthorBase() {
+  if (!newArrivalAuthorBasePromise) {
+    newArrivalAuthorBasePromise = getHostname()
+      .then((hostname) => (hostname || window.location.origin || "").replace(/\/$/, ""))
+      .catch(() => (window.location.origin || "").replace(/\/$/, ""));
+  }
+  return newArrivalAuthorBasePromise;
+}
+
+async function getNewArrivalPublishEnvironment() {
+  if (!newArrivalPublishEnvironmentPromise) {
+    newArrivalPublishEnvironmentPromise = getEnvironmentValue().catch(() => undefined);
+  }
+  return newArrivalPublishEnvironmentPromise;
+}
 
 function buildCard(item, isAuthor) {
-  const { id, sku, name, image = {}, category = [] } = item || {};
-  let imgUrl = isAuthor ? image?._authorUrl : image?._publishUrl;
+  const { id, sku, name, damImageURL = {}, category = [] } = item || {};
   const productId = sku || id || "";
 
   const card = document.createElement("article");
@@ -48,25 +70,12 @@ function buildCard(item, isAuthor) {
     });
   }
 
-  // Handle image display for author vs publish
   let picture = null;
-  if (imgUrl) {
-    if (!isAuthor && imgUrl.startsWith("http")) {
-      // For publish with full URL, use it directly in an img tag
-      picture = document.createElement("picture");
-      const img = document.createElement("img");
-      img.src = imgUrl;
-      img.alt = name || "Product image";
-      img.loading = "lazy";
-      picture.appendChild(img);
-    } else {
-      // For author or relative paths, use createOptimizedPicture
-      picture = createOptimizedPicture(imgUrl, name || "Product image", false, [
-        { media: "(min-width: 900px)", width: "600" },
-        { media: "(min-width: 600px)", width: "400" },
-        { width: "320" },
-      ]);
-    }
+  if (damImageURL && (damImageURL._dynamicUrl || damImageURL._publishUrl || damImageURL._authorUrl)) {
+    picture = createLumaProductImagePicture(damImageURL, name || "Product image", {
+      isAuthor,
+      eager: false,
+    });
   }
 
   const imgWrap = document.createElement("div");
@@ -96,10 +105,12 @@ async function fetchProducts(path) {
   try {
     if (!path) return [];
     // For AEM parameterized queries, use semicolon syntax: ;_path=value
-    const baseUrl = isAuthorEnvironment()
-      ? "https://author-p121371-e1189853.adobeaemcloud.com/graphql/execute.json/luma3/menproductspagelister;"
-      : "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/lumaProductsGraphQl?";
-    const url = `${baseUrl}_path=${path}`;
+    const isAuthor = isAuthorEnvironment();
+    const authorBase = await getNewArrivalAuthorBase();
+    const environment = await getNewArrivalPublishEnvironment();
+    const url = isAuthor
+      ? `${authorBase}${AUTHOR_PRODUCTS_ENDPOINT}_path=${path}`
+      : `${PUBLISH_GRAPHQL_PROXY_ENDPOINT}?endpoint=${PUBLISH_PRODUCTS_ENDPOINT_KEY}${environment ? `&environment=${environment}` : ''}&_path=${path}`;
     const resp = await fetch(url, {
       method: "GET",
       headers: {
@@ -108,7 +119,7 @@ async function fetchProducts(path) {
       },
     });
     const json = await resp.json();
-    const items = json?.data?.productsModelList?.items || [];
+    const items = json?.data?.lumaProductsModelList?.items || [];
     // Filter out null/invalid products
     return items.filter((item) => item && item.sku);
   } catch (e) {
@@ -299,8 +310,7 @@ function createCarousel(block, cards) {
     if (width <= 400) return 220;
     if (width <= 600) return 240;
     if (width <= 900) return 260;
-    if (width <= 1200) return 280;
-    return 300;
+    return 227.2;
   }
 
   function getWrapperPadding() {
@@ -313,6 +323,10 @@ function createCarousel(block, cards) {
   }
 
   function getVisibleCards() {
+    if (window.innerWidth > 1200) {
+      return Math.min(5, cards.length);
+    }
+
     // Get the wrapper's inner width to determine available space
     const wrapperWidth = carouselWrapper.offsetWidth;
 
@@ -320,7 +334,6 @@ function createCarousel(block, cards) {
     if (!wrapperWidth || wrapperWidth < 100) {
       const width = window.innerWidth;
       // Return reasonable defaults based on screen size
-      if (width >= 1200) return Math.min(4, cards.length);
       if (width >= 900) return Math.min(3, cards.length);
       if (width >= 600) return Math.min(2, cards.length);
       return 1;
@@ -373,6 +386,7 @@ function createCarousel(block, cards) {
     const needsScrolling = cards.length > visibleCards;
     prevBtn.style.display = needsScrolling ? "flex" : "none";
     nextBtn.style.display = needsScrolling ? "flex" : "none";
+    track.classList.toggle("is-centered", !needsScrolling);
   }
 
   prevBtn.addEventListener("click", (e) => {

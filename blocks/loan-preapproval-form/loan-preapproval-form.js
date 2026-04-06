@@ -12,18 +12,6 @@ import { syncFormDataLayer, DEFAULT_FORM_FIELD_MAP, attachLiveFormSync } from '.
 
 const LOAN_PREAPPROVAL_FORM_WIZARD_TITLE = 'Home Loan Application Form';
 const LOAN_PREAPPROVAL_FORM_WIZARD_NAME = 'home-loan-application';
-const LOAN_PREAPPROVAL_PREFILL_FIELD_MAP = {
-  firstName: DEFAULT_FORM_FIELD_MAP.firstName,
-  lastName: DEFAULT_FORM_FIELD_MAP.lastName,
-  email: DEFAULT_FORM_FIELD_MAP.email,
-  phone: DEFAULT_FORM_FIELD_MAP.phone,
-  streetAddress: DEFAULT_FORM_FIELD_MAP.streetAddress,
-  state: DEFAULT_FORM_FIELD_MAP.state,
-  zipCode: DEFAULT_FORM_FIELD_MAP.zipCode,
-  city: DEFAULT_FORM_FIELD_MAP.city,
-  country: DEFAULT_FORM_FIELD_MAP.country,
-};
-
 function getNestedProperty(obj, path) {
   if (!obj || !path) return undefined;
   return path.split('.').reduce((current, key) => current?.[key], obj);
@@ -47,10 +35,10 @@ function setFieldValue(field, value) {
   return true;
 }
 
-function prefillLoanPreapprovalFormFromDataLayer(form) {
+function prePopulateFormFromDataLayer(form) {
   if (!form || !window.dataLayer) return false;
   let hasPrefill = false;
-  Object.entries(LOAN_PREAPPROVAL_PREFILL_FIELD_MAP).forEach(([fieldName, dataLayerPath]) => {
+  Object.entries(DEFAULT_FORM_FIELD_MAP).forEach(([fieldName, dataLayerPath]) => {
     const field = form.querySelector(`[name="${fieldName}"]`);
     if (!field || hasExistingFieldValue(field)) return;
     const value = getNestedProperty(window.dataLayer, dataLayerPath);
@@ -67,7 +55,7 @@ function prefillLoanPreapprovalFormFromDataLayer(form) {
 function setupLoanPreapprovalFormPrefill(form) {
   if (!form) return;
   const syncPrefillToDataLayer = () => {
-    const didPrefill = prefillLoanPreapprovalFormFromDataLayer(form);
+    const didPrefill = prePopulateFormFromDataLayer(form);
     if (didPrefill) {
       syncFormDataLayer(form, DEFAULT_FORM_FIELD_MAP);
     }

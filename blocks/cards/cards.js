@@ -207,8 +207,15 @@ export default function decorate(block) {
     
     ul.append(li);
   });
+  const cardPictureBreakpoints = document.body.classList.contains('luma-theme')
+    ? [
+      { media: '(min-width: 600px)', width: '600' },
+      { width: '400' },
+    ]
+    : [{ width: '750' }];
+
   ul.querySelectorAll('picture > img').forEach((img) => {
-    const optimizedPic = createOptimizedPicture(img.src, img.alt, false, [{ width: '750' }]);
+    const optimizedPic = createOptimizedPicture(img.src, img.alt, false, cardPictureBreakpoints);
     moveInstrumentation(img, optimizedPic.querySelector('img'));
     img.closest('picture').replaceWith(optimizedPic);
   });

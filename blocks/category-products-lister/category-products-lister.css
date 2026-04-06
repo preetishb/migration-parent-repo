@@ -20,7 +20,7 @@ main .category-products-lister .cpl-tag {
 
 main .category-products-lister .cpl-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--cpl-gap);
 }
 
@@ -50,13 +50,24 @@ main .category-products-lister .cpl-card:hover {
 
 main .category-products-lister .cpl-card-media {
   line-height: 0;
+  height: 200px;
+  overflow: hidden;
+  background-color: #0000000a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 main .category-products-lister .cpl-card-media picture,
 main .category-products-lister .cpl-card-media img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+}
+
+main .category-products-lister .cpl-card-media img {
+  object-fit: contain;
+  filter: brightness(.96);
 }
 
 main .category-products-lister .cpl-card-meta {
@@ -89,5 +100,3 @@ main .category-products-lister .cpl-empty {
   grid-column: 1 / -1;
   color: #666;
 }
-
-

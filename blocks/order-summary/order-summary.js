@@ -1,4 +1,5 @@
 import { dispatchCustomEvent } from "../../scripts/custom-events.js";
+import { readBlockConfig } from "../../scripts/aem.js";
 
 /**
  * Generate random purchase order number
@@ -371,6 +372,9 @@ function setupDataLayerListener(block) {
  * @param {HTMLElement} block - The block element
  */
 export default function decorate(block) {
+  const config = readBlockConfig(block);
+  const checkoutEventType = (config.checkouteventtype || config['checkout-event-type'] || '').trim() || 'checkout';
+
   block.textContent = "";
 
   const container = document.createElement("div");
@@ -379,7 +383,7 @@ export default function decorate(block) {
 
   // Initial render
   renderOrderSummary(block);
-  dispatchCustomEvent("checkout");
+  dispatchCustomEvent(checkoutEventType);
 
   // Setup listener for cart updates
   setupDataLayerListener(block);

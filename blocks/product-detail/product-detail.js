@@ -1,7 +1,32 @@
-import { createOptimizedPicture, readBlockConfig } from "../../scripts/aem.js";
+import { createLumaProductImagePicture, readBlockConfig } from "../../scripts/aem.js";
 import { isAuthorEnvironment } from "../../scripts/scripts.js";
 import { dispatchCustomEvent } from "../../scripts/custom-events.js";
 import { addProductToCart } from "../../scripts/cart-store.js";
+import { getEnvironmentValue, getHostname } from "../../scripts/utils.js";
+
+const AUTHOR_PRODUCT_DETAIL_ENDPOINT = "/graphql/execute.json/luma3/lumaProductDetails;";
+const PUBLISH_GRAPHQL_PROXY_ENDPOINT = "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/luma-fetch";
+const PUBLISH_PRODUCT_DETAIL_ENDPOINT_KEY = "lumaProductDetails";
+const AUTHOR_PRODUCTS_ENDPOINT = "/graphql/execute.json/luma3/lumaProductListByPath;";
+const PUBLISH_PRODUCTS_ENDPOINT_KEY = "lumaProductListByPath";
+let productDetailAuthorBasePromise;
+let productDetailPublishEnvironmentPromise;
+
+async function getProductDetailAuthorBase() {
+  if (!productDetailAuthorBasePromise) {
+    productDetailAuthorBasePromise = getHostname()
+      .then((hostname) => (hostname || window.location.origin || "").replace(/\/$/, ""))
+      .catch(() => (window.location.origin || "").replace(/\/$/, ""));
+  }
+  return productDetailAuthorBasePromise;
+}
+
+async function getProductDetailPublishEnvironment() {
+  if (!productDetailPublishEnvironmentPromise) {
+    productDetailPublishEnvironmentPromise = getEnvironmentValue().catch(() => undefined);
+  }
+  return productDetailPublishEnvironmentPromise;
+}
 
 /**
  * Get query parameter from URL
@@ -27,11 +52,12 @@ async function fetchProductDetail(path, sku, isAuthor) {
       console.error("Product Detail: Missing path or SKU");
       return null;
     }
-   const skuItem = isAuthor ? `;sku=${sku}` : `&sku=${sku}`;
-    const baseUrl = isAuthor
-      ? "https://author-p121371-e1189853.adobeaemcloud.com/graphql/execute.json/luma3/getProductsByPathAndSKU;"
-      : "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/lumaProductsGrapghQlByPathAndSku?";
-    const url = `${baseUrl}_path=${path}${skuItem}`;
+    const skuItem = isAuthor ? `;sku=${sku}` : `&sku=${sku}`;
+    const authorBase = await getProductDetailAuthorBase();
+    const environment = await getProductDetailPublishEnvironment();
+    const url = isAuthor
+      ? `${authorBase}${AUTHOR_PRODUCT_DETAIL_ENDPOINT}_path=${path}${skuItem}`
+      : `${PUBLISH_GRAPHQL_PROXY_ENDPOINT}?endpoint=${PUBLISH_PRODUCT_DETAIL_ENDPOINT_KEY}${environment ? `&environment=${environment}` : ''}&_path=${path};sku=${sku}`;
     const resp = await fetch(url, {
       method: "GET",
       headers: {
@@ -40,7 +66,7 @@ async function fetchProductDetail(path, sku, isAuthor) {
       },
     });
     const json = await resp.json();
-    const items = json?.data?.productsModelList?.items || [];
+    const items = json?.data?.lumaProductsModelList?.items || [];
     return items.length > 0 ? items[0] : null;
   } catch (e) {
     // eslint-disable-next-line no-console
@@ -60,10 +86,11 @@ async function fetchAllProducts(path, isAuthor) {
     if (!path) {
       return [];
     }
-        const baseUrl = isAuthor
-      ? "https://author-p121371-e1189853.adobeaemcloud.com/graphql/execute.json/luma3/menproductspagelister;"
-      : "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/lumaProductsGraphQl?";
-    const url = `${baseUrl}_path=${path}`;
+    const authorBase = await getProductDetailAuthorBase();
+    const environment = await getProductDetailPublishEnvironment();
+    const url = isAuthor
+      ? `${authorBase}${AUTHOR_PRODUCTS_ENDPOINT}_path=${path}`
+      : `${PUBLISH_GRAPHQL_PROXY_ENDPOINT}?endpoint=${PUBLISH_PRODUCTS_ENDPOINT_KEY}${environment ? `&environment=${environment}` : ''}&_path=${path}`;
     const resp = await fetch(url, {
       method: "GET",
       headers: {
@@ -72,7 +99,7 @@ async function fetchAllProducts(path, isAuthor) {
       },
     });
     const json = await resp.json();
-    const items = json?.data?.productsModelList?.items || [];
+    const items = json?.data?.lumaProductsModelList?.items || [];
     const filtered = items.filter((item) => item && item.sku);
     return filtered;
   } catch (e) {
@@ -89,8 +116,7 @@ async function fetchAllProducts(path, isAuthor) {
  * @returns {HTMLElement} - Product card
  */
 function buildRecommendationCard(item, isAuthor) {
-  const { id, sku, name, image = {}, category = [] } = item || {};
-  let imgUrl = isAuthor ? image?._authorUrl : image?._publishUrl;
+  const { id, sku, name, damImageURL = {}, category = [] } = item || {};
   const productId = sku || id || "";
 
   const card = document.createElement("article");
@@ -130,23 +156,12 @@ function buildRecommendationCard(item, isAuthor) {
     });
   }
 
-  // Handle image display for author vs publish
   let picture = null;
-  if (imgUrl) {
-    if (!isAuthor && imgUrl.startsWith("http")) {
-      picture = document.createElement("picture");
-      const img = document.createElement("img");
-      img.src = imgUrl;
-      img.alt = name || "Product image";
-      img.loading = "lazy";
-      picture.appendChild(img);
-    } else {
-      picture = createOptimizedPicture(imgUrl, name || "Product image", false, [
-        { media: "(min-width: 900px)", width: "600" },
-        { media: "(min-width: 600px)", width: "400" },
-        { width: "320" },
-      ]);
-    }
+  if (damImageURL && (damImageURL._dynamicUrl || damImageURL._publishUrl || damImageURL._authorUrl)) {
+    picture = createLumaProductImagePicture(damImageURL, name || "Product image", {
+      isAuthor,
+      eager: false,
+    });
   }
 
   const imgWrap = document.createElement("div");
@@ -178,20 +193,20 @@ function buildRecommendationCard(item, isAuthor) {
  * @param {boolean} isAuthor - Is author environment
  * @returns {HTMLElement} - Product detail container
  */
-function buildProductDetail(product, isAuthor) {
+function buildProductDetail(product, isAuthor, eventConfig = {}) {
   const {
     name,
     price,
     category = [],
     description = {},
-    image = {},
+    damImageURL = {},
     sku,
     id,
   } = product;
 
   // Update dataLayer with product information
   // If dataLayer is not ready, the update will be queued automatically
-  const imageUrl = isAuthor ? image?._authorUrl : image?._publishUrl;
+  const imageUrl = isAuthor ? damImageURL?._authorUrl : damImageURL?._publishUrl;
 
   const productData = {
     id: id || sku || "",
@@ -225,25 +240,11 @@ function buildProductDetail(product, isAuthor) {
   const imageSection = document.createElement("div");
   imageSection.className = "pd-image";
 
-  const imgUrl = isAuthor ? image?._authorUrl : image?._publishUrl;
-  if (imgUrl) {
-    let picture = null;
-    if (!isAuthor && imgUrl.startsWith("http")) {
-      // For publish with full URL, use it directly
-      picture = document.createElement("picture");
-      const img = document.createElement("img");
-      img.src = imgUrl;
-      img.alt = name || "Product image";
-      img.loading = "eager";
-      picture.appendChild(img);
-    } else {
-      // For author or relative paths, use createOptimizedPicture
-      picture = createOptimizedPicture(imgUrl, name || "Product image", true, [
-        { media: "(min-width: 900px)", width: "800" },
-        { media: "(min-width: 600px)", width: "600" },
-        { width: "400" },
-      ]);
-    }
+  if (damImageURL && (damImageURL._dynamicUrl || damImageURL._publishUrl || damImageURL._authorUrl)) {
+    const picture = createLumaProductImagePicture(damImageURL, name || "Product image", {
+      isAuthor,
+      eager: true,
+    });
     if (picture) imageSection.appendChild(picture);
   }
 
@@ -299,7 +300,7 @@ function buildProductDetail(product, isAuthor) {
   addToCartBtn.textContent = "Add to Cart";
   addToCartBtn.setAttribute("aria-label", `Add ${name} to cart`);
   addToCartBtn.addEventListener("click", () => {
-    const imageUrl = isAuthor ? image?._authorUrl : image?._publishUrl;
+    const cartImageUrl = isAuthor ? damImageURL?._authorUrl : damImageURL?._publishUrl;
     const formattedCategory =
       category.length > 0
         ? category
@@ -310,14 +311,14 @@ function buildProductDetail(product, isAuthor) {
     addProductToCart({
       id: id || sku || "",
       name: name || "",
-      image: imageUrl || "",
-      thumbnail: imageUrl || "",
+      image: cartImageUrl || "",
+      thumbnail: cartImageUrl || "",
       category: formattedCategory,
       description: description?.html || description?.markdown || "",
       price: price || 0,
       quantity: 1,
     });
-    dispatchCustomEvent("addToCart");
+    dispatchCustomEvent(eventConfig.addToCart || "addToCart");
 
     // Show visual feedback
     addToCartBtn.textContent = "Added to Cart ✓";
@@ -332,7 +333,7 @@ function buildProductDetail(product, isAuthor) {
   addToWishlistBtn.setAttribute("aria-label", `Add ${name} to wishlist`);
   addToWishlistBtn.addEventListener("click", () => {
     // TODO: Implement wishlist functionality
-    dispatchCustomEvent("commerce.saveForLaters");
+    dispatchCustomEvent(eventConfig.addToWishlist || "commerce.saveForLaters");
   });
 
   actionsEl.append(addToCartBtn, addToWishlistBtn);
@@ -400,13 +401,20 @@ function buildRecommendations(currentProduct, allProducts, isAuthor) {
 export default async function decorate(block) {
   const isAuthor = isAuthorEnvironment();
 
+  // Read block config for authorable event types and folder path
+  const config = readBlockConfig(block);
+  const eventConfig = {
+    productView: (config.productvieweventtype || config['product-view-event-type'] || '').trim() || 'at-view-start',
+    addToCart: (config.addtocarteventtype || config['add-to-cart-event-type'] || '').trim() || 'addToCart',
+    addToWishlist: (config.addtowishlisteventtype || config['add-to-wishlist-event-type'] || '').trim() || 'commerce.saveForLaters',
+  };
+
   // Extract folder path from block config
   let folderHref = "";
   const link = block.querySelector("a[href]");
   if (link) {
     folderHref = link.getAttribute("href");
   } else {
-    const config = readBlockConfig(block);
     folderHref = config.folder || "";
   }
 
@@ -461,7 +469,7 @@ export default async function decorate(block) {
   }
 
   // Display product detail
-  const productDetail = buildProductDetail(product, isAuthor);
+  const productDetail = buildProductDetail(product, isAuthor, eventConfig);
   block.appendChild(productDetail);
 
   // Display recommendations
@@ -469,5 +477,5 @@ export default async function decorate(block) {
   if (recommendations) {
     block.appendChild(recommendations);
   }
-  dispatchCustomEvent("at-view-start");
+  dispatchCustomEvent(eventConfig.productView);
 }

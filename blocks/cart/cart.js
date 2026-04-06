@@ -1,5 +1,6 @@
-import { createOptimizedPicture, readBlockConfig } from "../../scripts/aem.js";
+import { createLumaProductImagePicture, createOptimizedPicture, readBlockConfig } from "../../scripts/aem.js";
 import { isAuthorEnvironment } from "../../scripts/scripts.js";
+import { getEnvironmentValue, getHostname } from "../../scripts/utils.js";
 import {
   getCartSnapshot,
   getEmptyCart,
@@ -8,6 +9,28 @@ import {
   setCartItemQuantity,
   syncFallbackCart,
 } from "../../scripts/cart-store.js";
+
+const AUTHOR_PRODUCTS_ENDPOINT = "/graphql/execute.json/luma3/lumaProductListByPath;";
+const PUBLISH_GRAPHQL_PROXY_ENDPOINT = "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/luma-fetch";
+const PUBLISH_PRODUCTS_ENDPOINT_KEY = "lumaProductListByPath";
+let cartAuthorBasePromise;
+let cartPublishEnvironmentPromise;
+
+async function getCartAuthorBase() {
+  if (!cartAuthorBasePromise) {
+    cartAuthorBasePromise = getHostname()
+      .then((hostname) => (hostname || window.location.origin || "").replace(/\/$/, ""))
+      .catch(() => (window.location.origin || "").replace(/\/$/, ""));
+  }
+  return cartAuthorBasePromise;
+}
+
+async function getCartPublishEnvironment() {
+  if (!cartPublishEnvironmentPromise) {
+    cartPublishEnvironmentPromise = getEnvironmentValue().catch(() => undefined);
+  }
+  return cartPublishEnvironmentPromise;
+}
 
 /**
  * Format price as currency
@@ -406,10 +429,11 @@ async function fetchAllProducts(path, isAuthor) {
     if (!path) {
       return [];
     }
-    const baseUrl = isAuthor
-      ? "https://author-p121371-e1189853.adobeaemcloud.com/graphql/execute.json/luma3/menproductspagelister;"
-      : "https://275323-918sangriatortoise.adobeioruntime.net/api/v1/web/dx-excshell-1/lumaProductsGraphQl?";
-    const url = `${baseUrl}_path=${path}`;
+    const authorBase = await getCartAuthorBase();
+    const environment = await getCartPublishEnvironment();
+    const url = isAuthor
+      ? `${authorBase}${AUTHOR_PRODUCTS_ENDPOINT}_path=${path}`
+      : `${PUBLISH_GRAPHQL_PROXY_ENDPOINT}?endpoint=${PUBLISH_PRODUCTS_ENDPOINT_KEY}${environment ? `&environment=${environment}` : ''}&_path=${path}`;
     const resp = await fetch(url, {
       method: "GET",
       headers: {
@@ -418,7 +442,7 @@ async function fetchAllProducts(path, isAuthor) {
       },
     });
     const json = await resp.json();
-    const items = json?.data?.productsModelList?.items || [];
+    const items = json?.data?.lumaProductsModelList?.items || [];
     const filtered = items.filter((item) => item && item.sku);
     return filtered;
   } catch (e) {
@@ -435,8 +459,7 @@ async function fetchAllProducts(path, isAuthor) {
  * @returns {HTMLElement} - Product card
  */
 function buildRecommendationCard(item, isAuthor) {
-  const { id, sku, name, image = {}, category = [] } = item || {};
-  let imgUrl = isAuthor ? image?._authorUrl : image?._publishUrl;
+  const { id, sku, name, damImageURL = {}, category = [] } = item || {};
   const productId = sku || id || "";
 
   const card = document.createElement("article");
@@ -476,23 +499,12 @@ function buildRecommendationCard(item, isAuthor) {
     });
   }
 
-  // Handle image display for author vs publish
   let picture = null;
-  if (imgUrl) {
-    if (!isAuthor && imgUrl.startsWith("http")) {
-      picture = document.createElement("picture");
-      const img = document.createElement("img");
-      img.src = imgUrl;
-      img.alt = name || "Product image";
-      img.loading = "lazy";
-      picture.appendChild(img);
-    } else {
-      picture = createOptimizedPicture(imgUrl, name || "Product image", false, [
-        { media: "(min-width: 900px)", width: "600" },
-        { media: "(min-width: 600px)", width: "400" },
-        { width: "320" },
-      ]);
-    }
+  if (damImageURL && (damImageURL._dynamicUrl || damImageURL._publishUrl || damImageURL._authorUrl)) {
+    picture = createLumaProductImagePicture(damImageURL, name || "Product image", {
+      isAuthor,
+      eager: false,
+    });
   }
 
   const imgWrap = document.createElement("div");

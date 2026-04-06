@@ -10,19 +10,6 @@ import { readBlockConfig, loadCSS, applyFormCustomStyles } from '../../scripts/a
 import { dispatchCustomEvent } from '../../scripts/custom-events.js';
 import { syncFormDataLayer, DEFAULT_FORM_FIELD_MAP, attachLiveFormSync } from '../../scripts/form-data-layer.js';
 
-const NEW_ACCOUNT_PREFILL_FIELD_MAP = {
-  firstName: DEFAULT_FORM_FIELD_MAP.firstName,
-  lastName: DEFAULT_FORM_FIELD_MAP.lastName,
-  email: DEFAULT_FORM_FIELD_MAP.email,
-  phone: DEFAULT_FORM_FIELD_MAP.phone,
-  streetAddress: DEFAULT_FORM_FIELD_MAP.streetAddress,
-  state: DEFAULT_FORM_FIELD_MAP.state,
-  zipCode: DEFAULT_FORM_FIELD_MAP.zipCode,
-  city: DEFAULT_FORM_FIELD_MAP.city,
-  country: DEFAULT_FORM_FIELD_MAP.country,
-  dateOfBirth: DEFAULT_FORM_FIELD_MAP.dateOfBirth,
-};
-
 function getNestedProperty(obj, path) {
   if (!obj || !path) return undefined;
   return path.split('.').reduce((current, key) => current?.[key], obj);
@@ -46,10 +33,10 @@ function setFieldValue(field, value) {
   return true;
 }
 
-function prefillNewAccountFormFromDataLayer(form) {
+function prePopulateFormFromDataLayer(form) {
   if (!form || !window.dataLayer) return false;
   let hasPrefill = false;
-  Object.entries(NEW_ACCOUNT_PREFILL_FIELD_MAP).forEach(([fieldName, dataLayerPath]) => {
+  Object.entries(DEFAULT_FORM_FIELD_MAP).forEach(([fieldName, dataLayerPath]) => {
     const field = form.querySelector(`[name="${fieldName}"]`);
     if (!field || hasExistingFieldValue(field)) return;
     const value = getNestedProperty(window.dataLayer, dataLayerPath);
@@ -66,7 +53,7 @@ function prefillNewAccountFormFromDataLayer(form) {
 function setupNewAccountFormPrefill(form) {
   if (!form) return;
   const applyPrefill = () => {
-    prefillNewAccountFormFromDataLayer(form);
+    prePopulateFormFromDataLayer(form);
   };
 
   applyPrefill();

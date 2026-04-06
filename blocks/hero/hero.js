@@ -8,6 +8,8 @@ import { readBlockConfig } from '../../scripts/aem.js';
  */
 export default function decorate(block) {
   const config = readBlockConfig(block) || {};
+  const HORIZONTAL_ALIGNMENT_VALUES = ['left', 'center', 'right'];
+  const VERTICAL_ALIGNMENT_VALUES = ['top', 'middle', 'bottom'];
 
   /* Value from nth row (same approach as lines 39–46): row = :scope > div:nth-child(n), value from first cell */
   const rowVal = (n) => {
@@ -20,6 +22,10 @@ export default function decorate(block) {
     }
     return col?.textContent?.trim();
   };
+
+  const pickFirstMatchingValue = (values, allowedValues) => values
+    .map((value) => (value ?? '').toString().trim().toLowerCase())
+    .find((value) => allowedValues.includes(value));
 
   const enableUnderline = (config.enableunderline ?? rowVal(3) ?? 'true').toString();
   const layoutStyle = config.herolayout ?? rowVal(4) ?? 'overlay';
@@ -74,10 +80,20 @@ export default function decorate(block) {
   });
 
   /* Banner-like: alignment, vertical alignment, full width – from config, data-aue-prop, or row DOM */
-  const alignment = (config.alignment ?? block.querySelector('[data-aue-prop="alignment"]')?.textContent?.trim() ?? rowVal(7) ?? 'center').toString().toLowerCase();
+  const alignment = pickFirstMatchingValue([
+    config.alignment,
+    block.querySelector('[data-aue-prop="alignment"]')?.textContent?.trim(),
+    rowVal(7),
+    rowVal(8),
+  ], HORIZONTAL_ALIGNMENT_VALUES) ?? 'center';
   if (alignment) block.classList.add(`hero--alignment-${alignment}`);
 
-  const verticalAlignment = (config.verticalalignment ?? rowVal(8) ?? 'middle').toString().toLowerCase();
+  const verticalAlignment = pickFirstMatchingValue([
+    config.verticalalignment,
+    block.querySelector('[data-aue-prop="verticalalignment"]')?.textContent?.trim(),
+    rowVal(8),
+    rowVal(9),
+  ], VERTICAL_ALIGNMENT_VALUES) ?? 'middle';
   block.classList.add(`hero--verticalalignment-${verticalAlignment}`);
 
   const isFullWidth = config.isfullwidth === 'true' || config.isfullwidth === true || rowVal(9) === 'true';
